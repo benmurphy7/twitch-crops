@@ -43,13 +43,12 @@ def plotDict(dict):
     plt.plot(x, y)
     plt.show()
 
-
 #-------------------------------
 #            Main
 #-------------------------------
-# "~" doesnt work, use the absolute path
-downloadDir = "/home/ben/Projects/TwitchCrops/Downloads"
-videoID = "877276526"
+
+downloadDir = "./Downloads"
+videoID = "883685672"
 logPath = downloadDir + "/{}.log".format(videoID)
 
 if not path.exists(logPath):
@@ -64,9 +63,12 @@ emoteList.append("LUL")
 
 times = parse(logPath, emoteList)
 
-#Get a list of emotes (Store in hash table?)
-#Parse all messages and check emote table
-#Save all emote timestamps? - need to cluster, potentially with multiple emotes
-#Profile - select sets of emotes to cluster (or find associations via analysis)
+
+#Get list of top used emotes on a channel
+#Cluster these by peak usage times (reactions/shared sentiment)
+#Spam filter
+#Sentiment analysis? clustered emotes should share sentiment
+
+#Profile - manually select sets of emotes to cluster
 
 
