@@ -1,72 +1,248 @@
+import numpy as np
 import tcd
 import os
 from os import path
 import datetime
 import operator
-import matplotlib.pylab as plt
+import matplotlib.pyplot as plt
+from scipy.interpolate import make_interp_spline
+from scipy.signal import find_peaks
 
-def toTimestamp(secs):
+import collect
+import mplcursors
+
+
+def to_timestamp(secs):
     return str(datetime.timedelta(seconds=secs))
 
-def getSeconds(timestamp):
+def get_seconds_list(list):
+    seconds = []
+    for timestamp in list:
+        seconds.append(get_seconds(timestamp))
+    return seconds
+
+def get_seconds(timestamp):
     h, m, s = timestamp.split(':')
     return int(h) * 3600 + int(m) * 60 + int(s)
 
-def getTimestamp(line):
-    endIdx = line.find("]")
-    timestamp = line[1:endIdx]
+def parse_timestamp(line):
+    end_idx = line.find("]")
+    timestamp = line[1:end_idx]
     return timestamp
 
-def parse(logPath, emotes):
+def parse_user(line):
+    start_idx = line.find(" <") + 2
+    end_idx = line.find("> ")
+    user = line[start_idx:end_idx]
+    return user
+
+def parse_message(line):
+    start_idx = line.find("> ") + 2
+    message = line[start_idx:]
+    return message.strip('\n')
+
+def parse_log(log_path):
+    with open(log_path) as f:
+        f = f.readlines()
+    parsed = []
+    for line in f:
+        timestamp = parse_timestamp(line)
+        user = parse_user(line)
+        message = parse_message(line)
+        parsed.append((timestamp, user, message))
+    return parsed
+
+def round_down(num, divisor):
+    return num - (num % divisor)
+
+def max_value_pair(x):
+    sorted_x = sorted(x.items(), key=lambda item: item[1], reverse=True)
+    if len(sorted_x) < 1:
+        return ("null", -1)
+    return (sorted_x[0])
+
+def add_value(k, v, d):
+    if k in d:
+        d[k] += v
+    else:
+        d[k] = v
+    return d
+
+# Returning (timestamp, count) for each window. Count is just highest count of any emote.
+# Should track the prominent emote for each window
+def log_emotes(parsed, emotes_list, window, filter_list=[]):
+    window_start = 0
+    window_data = {}
     times = {}
-    with open(logPath) as f:
+    for set in parsed:
+        timestamp = set[0]
+        user = set[1]
+        message = set[2]
+        rounded_time = round_down(get_seconds(timestamp), window)
+
+        # Start of new window
+        if rounded_time > window_start:
+            # Get max from ending window
+            top_pair = max_value_pair(window_data)
+            window_timestamp = to_timestamp(rounded_time)
+            # Save tuple as value in future
+            times[window_timestamp] = top_pair
+            window_start = rounded_time
+            window_data = {}
+
+        if len(filter_list) > 0:
+            for word in filter_list:
+                if word in message:
+                    window_data = add_value(word, 1, window_data)
+
+        else:
+            # Ignore lines with multiple emote instances (Generally spam, reactions are single emotes)
+            for emote in emotes_list:
+                if emote in message:
+                    cleaned = message.replace(emote,"",1)
+                    # Message contains more than a single emote - ignore
+                    if cleaned != "":
+                        break
+                    window_data = add_value(emote, 1, window_data)
+
+    return times
+
+# Old parse method - works well for single emotes,
+# but may miss important moments in smaller streams when reactions are more spread out
+def parse(log_path, emotes):
+    with open(log_path) as f:
         f = f.readlines()
 
+    # Saving the timestamp as a string, which is not chronologically ordered
+    # Resulting graph is missing periods of no activity
+    times = {}
     for line in f:
+        timestamp = parse_timestamp(line)
+        if timestamp in times:
+            times[timestamp] += 1
+        else:
+            times[timestamp] = 1
+        """
         for emote in emotes:
             if emote in line:
                 timestamp = getTimestamp(line)
-                seconds = timestamp#getSeconds(timestamp)
+                #seconds = getSeconds(timestamp)
                 #print("{} = {} seconds = {}".format(timestamp, seconds, toTimestamp(seconds)))
-                if seconds in times:
-                    times[seconds] += 1
+                if timestamp in times:
+                    times[timestamp] += 1
                 else:
-                    times[seconds] = 1
+                    times[timestamp] = 1
+        """
+    return times
 
-    #print(toTimestamp(max(times.items(), key=operator.itemgetter(1))[0]))
-    plotDict(times)
-def plotDict(dict):
-    lists = sorted(dict.items())  # sorted by key, return a list of tuples
+def show_peaks(times, limit=-1):
+    best_times = []
+    best_labels = []
+    best_values = []
 
-    x, y = zip(*lists)  # unpack a list of pairs into two tuples
+    # Show only top x results
+    if limit > 0:
+        # [(k,(l,v))]
+        sorted_items = sorted(list(times.items()), key=lambda x: x[1][1], reverse=True)
+        while len(best_times) < limit:
+            #best_labels.append(sorted_items[len(best_labels)][1][0])
+            #best_values.append(sorted_items[len(best_values)][1][1])
+            best_times.append(sorted_items[len(best_times)][0])
 
+        best_times = sorted(best_times)
+
+        for time in best_times:
+            best_labels.append(times[time][0])
+            best_values.append(times[time][1])
+
+    # Show peaks
+    else:
+        keys = list(times.keys())
+        tup_values = list(times.values())
+        labels = []
+        values = []
+
+        for value in tup_values:
+            labels.append(value[0])
+            values.append(value[1])
+
+        x = np.array(values)
+        peaks, _ = find_peaks(x, prominence=1)  # 12-13 is best, need to test on other logs
+
+        for peak in peaks:
+            time = keys[peak]
+            best_times.append(time)
+            best_labels.append(times[time][0])
+            best_values.append(times[time][1])
+
+        avg_val = sum(best_values) / len(best_values)
+        plt.axhline(y=avg_val, color='r', linestyle='-')
+
+    x = best_times
+    y = best_values
+
+    plt.scatter(x, y)
+
+    # Label points
+    """
+    for x, y in zip(x, y):
+        label = f"({x})"
+
+        plt.annotate(label,  # this is the text
+                     (x, y),  # this is the point to label
+                     textcoords="offset points",  # how to position the text
+                     xytext=(0, 10),  # distance from text to points (x,y)
+                     ha='center')  # horizontal alignment can be left, right or center
+    """
+    mplcursors.cursor(hover=True).connect(
+        "add", lambda sel: sel.annotation.set_text( # Issue hovering over line
+            best_times[sel.target.index] + "\n" + best_labels[sel.target.index]))
+    plt.show()
+
+def plot_dict(dict):
+    items = dict.items()  # list of (K,V) tuples
+    print(items)
+    x, y = zip(*items)  # unpack tuples into x, y values
     plt.plot(x, y)
     plt.show()
 
-#-------------------------------
-#            Main
-#-------------------------------
 
-downloadDir = "./Downloads"
-videoID = "883685672"
-logPath = downloadDir + "/{}.log".format(videoID)
+if __name__ == '__main__':
+    download_dir = "./Downloads"
+    video_id = "885819986"
+    log_path = download_dir + "/{}.log".format(video_id)
 
-if not path.exists(logPath):
-    print("File not found. Downloading...")
-    os.system("tcd --video {} --format irc --output {}".format(videoID,downloadDir))
-else:
-    print("Log already exists")
+    if not path.exists(log_path):
+        print("File not found. Downloading...")
+        os.system("tcd --video {} --format irc --output {}".format(video_id, download_dir))
+    else:
+        print("Log already exists")
 
-emoteList = []
+    emotes_list = collect.getEmotesList(video_id)
+    custom_filters = ["LUL"]
 
-emoteList.append("LUL")
+    print("Analyzing chat...")
 
-times = parse(logPath, emoteList)
+    # parsed : [timestamp, user, message]
+    parsed = parse_log(log_path)
+    data = log_emotes(parsed, emotes_list, 1, custom_filters)
+    #plot_dict(data)
+    #times = parse(log_path, emotes_list)
+    # For smaller streams, clustering by time is necessary since overlap is rare
+    # Try grouping counts by x seconds (5?) - larger span could be a problem with spam
+    # Get the most used emote within that timeframe, save as K = timestamp, V = (count,emote)
+    # Result - thrown off by spam, difficult to get moment pinpoint from plot
+    #smoothed = smoothData(times, 15)
+    show_peaks(data, 10)
 
+    # print(toTimestamp(max(times.items(), key=operator.itemgetter(1))[0]))
+    # Very slow - need to process this before plotting
+    #plotDict(times)
 
-#Get list of top used emotes on a channel
-#Cluster these by peak usage times (reactions/shared sentiment)
-#Spam filter
+#Signal/noise ratio
+
+#Fix times plotting
+
 #Sentiment analysis? clustered emotes should share sentiment
 
 #Profile - manually select sets of emotes to cluster
