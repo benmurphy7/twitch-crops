@@ -70,7 +70,17 @@ def add_value(k, v, d):
 
 # Returning (timestamp, count) for each window. Count is just highest count of any emote.
 # Should track the prominent emote for each window
-def log_emotes(parsed, emotes_list, window, filter_list=[]):
+def log_emotes(parsed, emotes, window, filter_list=[]):
+    emotes_list = []
+    # Check for all emotes containing any words in filters
+    if len(filter_list) > 0:
+        for emote in emotes:
+            for filter in filter_list:
+                if filter in emote:
+                    emotes_list.append(emote)
+    else:
+        emotes_list = emotes
+
     window_start = 0
     window_data = {}
     times = {}
@@ -89,21 +99,24 @@ def log_emotes(parsed, emotes_list, window, filter_list=[]):
             times[window_timestamp] = top_pair
             window_start = rounded_time
             window_data = {}
-
+        """
         if len(filter_list) > 0:
             for word in filter_list:
                 if word in message:
-                    window_data = add_value(word, 1, window_data)
-
-        else:
-            # Ignore lines with multiple emote instances (Generally spam, reactions are single emotes)
-            for emote in emotes_list:
-                if emote in message:
-                    cleaned = message.replace(emote,"",1)
+                    cleaned = message.replace(word, "", 1)
                     # Message contains more than a single emote - ignore
                     if cleaned != "":
                         break
-                    window_data = add_value(emote, 1, window_data)
+                    window_data = add_value(word, 1, window_data)
+        """
+        # Ignore lines with multiple emote instances (Generally spam, reactions are single emotes)
+        for emote in emotes_list:
+            if emote in message:
+                cleaned = message.replace(emote,"",1)
+                # Message contains more than a single emote - ignore
+                if cleaned != "":
+                    break
+                window_data = add_value(emote, 1, window_data)
 
     return times
 
@@ -136,6 +149,9 @@ def parse(log_path, emotes):
     return times
 
 def show_peaks(times, limit=-1):
+
+    plt.figure(num='Chat Reactions Over Played Stream')
+
     best_times = []
     best_labels = []
     best_values = []
@@ -194,14 +210,20 @@ def show_peaks(times, limit=-1):
                      xytext=(0, 10),  # distance from text to points (x,y)
                      ha='center')  # horizontal alignment can be left, right or center
     """
+
+    # Show info when hovering cursor
     mplcursors.cursor(hover=True).connect(
         "add", lambda sel: sel.annotation.set_text( # Issue hovering over line
             best_times[sel.target.index] + "\n" + best_labels[sel.target.index]))
+
+    fig = plt.gca()
+    fig.axes.get_xaxis().set_ticks([])
+
+
     plt.show()
 
 def plot_dict(dict):
     items = dict.items()  # list of (K,V) tuples
-    print(items)
     x, y = zip(*items)  # unpack tuples into x, y values
     plt.plot(x, y)
     plt.show()
@@ -209,23 +231,24 @@ def plot_dict(dict):
 
 if __name__ == '__main__':
     download_dir = "./Downloads"
-    video_id = "885819986"
+    video_id = "888950607"
     log_path = download_dir + "/{}.log".format(video_id)
 
     if not path.exists(log_path):
-        print("File not found. Downloading...")
+        print("Chat log not found. Downloading...")
         os.system("tcd --video {} --format irc --output {}".format(video_id, download_dir))
     else:
         print("Log already exists")
 
-    emotes_list = collect.getEmotesList(video_id)
-    custom_filters = ["LUL"]
+    emotes_list, video_title, channel = collect.getEmotesList(video_id)
+    custom_filters = []
+    custom_filters.append("Pog")
 
     print("Analyzing chat...")
 
     # parsed : [timestamp, user, message]
     parsed = parse_log(log_path)
-    data = log_emotes(parsed, emotes_list, 1, custom_filters)
+    data = log_emotes(parsed, emotes_list, 5, custom_filters)
     #plot_dict(data)
     #times = parse(log_path, emotes_list)
     # For smaller streams, clustering by time is necessary since overlap is rare
@@ -233,7 +256,7 @@ if __name__ == '__main__':
     # Get the most used emote within that timeframe, save as K = timestamp, V = (count,emote)
     # Result - thrown off by spam, difficult to get moment pinpoint from plot
     #smoothed = smoothData(times, 15)
-    show_peaks(data, 10)
+    show_peaks(data, 50)
 
     # print(toTimestamp(max(times.items(), key=operator.itemgetter(1))[0]))
     # Very slow - need to process this before plotting

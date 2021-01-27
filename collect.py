@@ -95,7 +95,7 @@ def getEmotesList(video_id):
     print("\nTTV: {}\nBTTV: {}\nFFZ: {}\n".format(ttv, bttv, ffz))
 
     # Order by length desc
-    return sorted(list(chat_emotes.keys()), key=len, reverse=True)
+    return sorted(list(chat_emotes.keys()), key=len, reverse=True), video.title, video.user_name
 
 
 
