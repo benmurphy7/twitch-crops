@@ -210,10 +210,14 @@ def show_peaks(times, limit=-1):
 
     #TODO: Fix random "'PickEvent' object has no attribute 'ind'" error
     def on_pick(event):
-        ind = int(event.ind)
-        timestamp = x[ind]
-        link_secs = get_seconds(timestamp) - 10
-        webbrowser.open(timestamp_url(link_secs), new=0, autoraise=True)
+        try:
+            ind = int(event.ind[0])
+            timestamp = x[ind]
+            link_secs = get_seconds(timestamp) - 10
+            webbrowser.open(timestamp_url(link_secs), new=0, autoraise=True)
+        except:
+            #Ignore error for now... not breaking functionality
+            pass
 
     fig.canvas.mpl_connect('pick_event', on_pick)
 
@@ -239,7 +243,7 @@ if __name__ == '__main__':
         print("Log already exists")
 
     emotes_list, video_title, channel = collect.getEmotesList(video_id)
-    custom_filters = ["Wut"]
+    custom_filters = ["LULW", "KEKW"]
 
     print("Analyzing chat...")
 
@@ -259,10 +263,20 @@ if __name__ == '__main__':
     # Very slow - need to process this before plotting
     # plotDict(times)
 
-# Signal/noise ratio
+#TODO: Merge consecutive reaction timeblocks
+    # Improve time offset for links
 
-# Fix times plotting
+#TODO: Improve importance filtering
+    # Intensity score (higher peak) vs extended "chanting"
+    # Filter out reactions to spoken emote name? Speech to text library - analyze audio clip before peak
 
-# Sentiment analysis? clustered emotes should share sentiment
+#TODO: Show top-used emotes / stats
 
-# Profile - manually select sets of emotes to cluster
+#TODO: Association clustering (non k-means)
+
+#TODO: Basic UI (Tkinter or webapp)
+    # visual emote filtering
+    # visualize stats
+    # embedded video player for linking
+
+#TODO: Improve log downloading?
