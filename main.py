@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 import tcd
 import os
@@ -76,14 +78,24 @@ def add_value(k, v, d):
         d[k] = v
     return d
 
+
 def timestamp_url(secs):
     url = "http://twitch.tv/videos/" + video_id + "?t=" + link_time(secs)
     return url
 
 
+def is_new_max(list, value):
+    if len(list) != 0:
+        for item in list:
+            if value > item:
+                return True
+    else:
+        return True
+
+
 # Returning (timestamp, count) for each window. Count is just highest count of any emote.
 # Should track the prominent emote for each window
-def log_emotes(parsed, emotes, window, filter_list=[]):
+def log_emotes(parsed, emotes, window_size, filter_list=[]):
     log_emotes_list = []
     # Check for all emotes containing any words in filters
     if len(filter_list) > 0:
@@ -97,21 +109,48 @@ def log_emotes(parsed, emotes, window, filter_list=[]):
     window_start = 0
     window_data = {}
     times = {}
+
+    # Merging repeated windows
+    first_timestamp = ""
+    prev_emote = ""
+    window_count = 0
+    top_counts = []
+
     for set in parsed:
         timestamp = set[0]
         user = set[1]
         message = set[2]
-        rounded_time = round_down(get_seconds(timestamp), window)
+        rounded_time = round_down(get_seconds(timestamp), window_size)
 
         # Start of new window
         if rounded_time > window_start:
             # Get max from ending window
             top_pair = max_value_pair(window_data)
             window_timestamp = to_timestamp(rounded_time)
-            # Save tuple as value in future
+
+            window_count += 1
+            top_emote = top_pair[0]
+            top_count = top_pair[1]
+
+            # Check for repeated windows and merge
+            if top_emote is prev_emote:
+                if is_new_max(top_counts, top_count):
+                    top_counts.append(top_count)
+                    # Move max to first timestamp
+                    times[first_timestamp] = (top_emote, top_count)
+                # Flatten repeated window
+                top_pair = (top_emote, 1)
+
+            else:
+                top_counts = []
+                first_timestamp = window_timestamp
+                times[window_timestamp] = top_pair
+
             times[window_timestamp] = top_pair
+            prev_emote = top_emote
             window_start = rounded_time
             window_data = {}
+
         """
         if len(filter_list) > 0:
             for word in filter_list:
@@ -122,6 +161,7 @@ def log_emotes(parsed, emotes, window, filter_list=[]):
                         break
                     window_data = add_value(word, 1, window_data)
         """
+
         # Ignore lines with multiple emote instances (Generally spam, reactions are single emotes)
         for emote in log_emotes_list:
             if emote in message:
@@ -182,9 +222,13 @@ def show_peaks(times, limit=-1):
     y = best_values
 
     fig, ax = plt.subplots()
-    ax.scatter(x, y, picker=True)
+    scatter = ax.scatter(x, y, picker=True)
+
     fig.canvas.set_window_title("Chat Reactions Over Played Stream")
-    fig.suptitle(video_title + "\nChannel:  "+ channel)
+    fig.suptitle(video_title + "\nChannel:  " + channel)
+
+
+
 
     #plt.scatter(x, y)
 
@@ -208,10 +252,13 @@ def show_peaks(times, limit=-1):
     gca = plt.gca()
     gca.axes.get_xaxis().set_ticks([])
 
+
     #TODO: Fix random "'PickEvent' object has no attribute 'ind'" error
     def on_pick(event):
         try:
             ind = int(event.ind[0])
+            plt.plot(x[ind], y[ind], 'ro')
+            fig.canvas.draw()
             timestamp = x[ind]
             link_secs = get_seconds(timestamp) - 10
             webbrowser.open(timestamp_url(link_secs), new=0, autoraise=True)
@@ -221,7 +268,9 @@ def show_peaks(times, limit=-1):
 
     fig.canvas.mpl_connect('pick_event', on_pick)
 
-    plt.show()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        plt.show()
 
 
 def plot_dict(dict):
@@ -233,7 +282,7 @@ def plot_dict(dict):
 
 if __name__ == '__main__':
     download_dir = "./Downloads"
-    video_id = "888950607"
+    video_id = "952883444"
     log_path = download_dir + "/{}.log".format(video_id)
 
     if not path.exists(log_path):
@@ -243,7 +292,7 @@ if __name__ == '__main__':
         print("Log already exists")
 
     emotes_list, video_title, channel = collect.getEmotesList(video_id)
-    custom_filters = ["LULW", "KEKW"]
+    custom_filters = ["Pepepains", "KEK", "OMEGALUL"]
 
     print("Analyzing chat...")
 
@@ -263,8 +312,11 @@ if __name__ == '__main__':
     # Very slow - need to process this before plotting
     # plotDict(times)
 
-#TODO: Merge consecutive reaction timeblocks
-    # Improve time offset for links
+
+
+#TODO: Reactions that last longer should be highlighted in some way?
+
+#TODO: Show relative spacing in plot view
 
 #TODO: Improve importance filtering
     # Intensity score (higher peak) vs extended "chanting"
