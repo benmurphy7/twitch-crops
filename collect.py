@@ -4,12 +4,12 @@ import re
 
 chat_emotes = {}
 
-def getClientInfo(file):
+def get_client_info(file):
     with open(file) as f:
         lines = f.readlines()
         return lines[0].strip(), lines[1].strip()
 
-def addEmote(key):
+def add_emote(key, url):
     global chat_emotes
     if key not in chat_emotes:
         chat_emotes[key] = 0
@@ -17,24 +17,36 @@ def addEmote(key):
     else:
         return 0
 
-def getValue(key, str):
+def get_value(key, str):
    return re.search('\'' + key + '\': \'(.*?)\',', str).group(1)
 
-def getEmotesList(video_id):
+def get_emote_info(emote):
+    return emote['code'], emote['id']
+
+def add_bttv_emote(emote):
+    bttv_url = "https://cdn.betterttv.net/emote/"
+    name, id = get_emote_info(emote)
+    url = bttv_url + str(id) + "/3x"
+    return add_emote(name, url)
+
+def add_ttv_emote(emote):
+    ttv_url = "https://static-cdn.jtvnw.net/emoticons/v1/"
+    name, id = get_emote_info(emote)
+    url = ttv_url + str(id) + "/3.0"
+    return add_emote(name, url)
+
+def get_available_emotes(video_id):
+    # --Supported emote sources--
+    # TTV
+    # BTTV
+    # FFZ
+
     global chat_emotes
-    #--Supported emote sources--
-    #TTV
-    #BTTV
-    #FFZ
-
-    #video_id = '882407401'
-    client_info = './clientInfo.txt'
-    client_id, client_secret = getClientInfo(client_info)
-
-    client = twitch.Helix(client_id=client_id, client_secret=client_secret)
-
     user_name = ""
     user_id = ""
+
+    client_id, client_secret = get_client_info('./clientInfo.txt')
+    client = twitch.Helix(client_id=client_id, client_secret=client_secret)
 
     for video in client.videos(video_id):
         user_name = video.user_name
@@ -52,15 +64,15 @@ def getEmotesList(video_id):
         bttv_user = req.get('https://api.betterttv.net/3/cached/users/twitch/' + user_id ).json()
 
         for emote in bttv_user['sharedEmotes']:
-            bttv += addEmote(emote['code'])
+            bttv += add_bttv_emote(emote)
 
         for emote in bttv_user['channelEmotes']:
-            bttv += addEmote(emote['code'])
+            bttv += add_bttv_emote(emote)
 
         bttv_global = req.get('https://api.betterttv.net/3/cached/emotes/global').json()
 
         for emote in bttv_global:
-            bttv += addEmote(emote['code'])
+            bttv += add_bttv_emote(emote)
     except:
         print("Error loading BTTV emotes")
         pass
@@ -72,8 +84,11 @@ def getEmotesList(video_id):
 
         for set in sets:
             for emoticon in sets[set]['emoticons']:
-                name = getValue('name', str(emoticon))
-                ffz += addEmote(name)
+                name = emoticon['name']
+                url_dict = emoticon['urls']
+                # Get highest resolution image available
+                url = url_dict[list(url_dict)[-1]]
+                ffz += add_emote(name, url)
     except:
         print("Error loading FFZ emotes")
         pass
@@ -81,21 +96,20 @@ def getEmotesList(video_id):
     #Get global twitch emotes
     global_emotes = req.get('https://api.twitchemotes.com/api/v4/channels/0').json()
     for emote in global_emotes['emotes']:
-        ttv += addEmote(emote['code'])
+        ttv += add_ttv_emote(emote)
 
     #Get twitch channel emotes
     try:
         channel_emotes = req.get('https://api.twitchemotes.com/api/v4/channels/' + user_id ).json()
         for emote in channel_emotes['emotes']:
-            ttv += addEmote(emote['code'])
+            ttv += add_ttv_emote(emote)
     except:
         print("Error loading Twitch channel emotes")
 
     print("\nFound {} available emotes:".format(len(chat_emotes)))
     print("\nTTV: {}\nBTTV: {}\nFFZ: {}\n".format(ttv, bttv, ffz))
 
-    # Order by length desc
-    return sorted(list(chat_emotes.keys()), key=len, reverse=True), video.title, video.user_name
+    return chat_emotes, video.title, video.user_name
 
 
 

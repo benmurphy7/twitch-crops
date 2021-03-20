@@ -282,7 +282,7 @@ def plot_dict(dict):
 
 if __name__ == '__main__':
     download_dir = "./Downloads"
-    video_id = "952883444"
+    video_id = "955306254"
     log_path = download_dir + "/{}.log".format(video_id)
 
     if not path.exists(log_path):
@@ -291,8 +291,10 @@ if __name__ == '__main__':
     else:
         print("Log already exists")
 
-    emotes_list, video_title, channel = collect.getEmotesList(video_id)
-    custom_filters = ["Pepepains", "KEK", "OMEGALUL"]
+    chat_emotes, video_title, channel = collect.get_available_emotes(video_id)
+    # Order keys by length desc
+    emotes_list = sorted(list(chat_emotes.keys()), key=len, reverse=True)
+    custom_filters = ["OMEGALUL","KEKW", "LULW", "Pepepains"]
 
     print("Analyzing chat...")
 
@@ -312,7 +314,10 @@ if __name__ == '__main__':
     # Very slow - need to process this before plotting
     # plotDict(times)
 
-
+#TODO: Basic UI (Tkinter or webapp)
+    # visual emote filtering
+    # visualize stats
+    # embedded video player for linking
 
 #TODO: Reactions that last longer should be highlighted in some way?
 
@@ -325,10 +330,5 @@ if __name__ == '__main__':
 #TODO: Show top-used emotes / stats
 
 #TODO: Association clustering (non k-means)
-
-#TODO: Basic UI (Tkinter or webapp)
-    # visual emote filtering
-    # visualize stats
-    # embedded video player for linking
 
 #TODO: Improve log downloading?
