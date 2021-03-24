@@ -9,7 +9,8 @@ from tkinter import *
 import requests as req
 from PIL import Image
 
-images_dir = "Images"
+import main
+
 
 class TransparentAnimatedGifConverter(object):
     _PALETTE_SLOTSET = set(range(256))
@@ -181,7 +182,7 @@ def get_frames(im):
     return frames
 
 def get_path(emote_name):
-    return images_dir + os.path.sep + get_image_id(emote_name) + ".gif"
+    return main.images_dir + os.path.sep + get_image_id(emote_name) + ".gif"
 
 def save_image(im, name):
     file_path = get_path(name)

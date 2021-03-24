@@ -1,5 +1,6 @@
 import datetime
 import os
+import sys
 import warnings
 import webbrowser
 from os import path
@@ -9,9 +10,12 @@ import mplcursors
 import numpy as np
 from scipy.signal import find_peaks
 
+import collect
 import display
 
 download_dir = "Downloads"
+images_dir = "Images"
+client_info = "clientInfo.txt"
 
 
 def to_timestamp(secs):
@@ -290,13 +294,23 @@ def parse_vod_log(video_id, chat_emotes, custom_filters):
     data = log_emotes(parsed, emotes_list, 5, custom_filters)
     return data
 
-if __name__ == '__main__':
+def set_client_info(file):
+    client_id, client_secret = collect.get_client_info(file)
+    os.system("tcd --client-id {} --client-secret {}".format(client_id, client_secret))
 
-    check_for_dirs = ["Images", "Downloads"]
+def setup():
+    if not os.path.exists(client_info):
+        print("Error: clientInfo.txt not found")
+        sys.exit(0)
+    set_client_info(client_info)
+
+    check_for_dirs = [images_dir, download_dir]
     for dir in check_for_dirs:
         if not os.path.exists(dir):
             os.makedirs(dir)
 
+if __name__ == '__main__':
+    setup()
     display.create_qt_window()
 
 
