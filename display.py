@@ -55,17 +55,17 @@ class Ui(QtWidgets.QMainWindow):
                 main.channel = channel
                 main.video_id = video_id
 
+                self.titleLabel.setText(video_title)
+                self.channelLabel.setText(channel)
+                self.chat_emotes = chat_emotes
+
                 missing = images.missing_emotes(chat_emotes)
                 to_download = len(missing)
                 for count, emote in enumerate(missing):
                     images.download_image(emote, chat_emotes[emote])
                     self.update_status("Getting image {}/{}".format(count+1,to_download))
 
-                self.titleLabel.setText(video_title)
-                self.channelLabel.setText(channel)
-                self.chat_emotes = chat_emotes
                 self.display_emotes(chat_emotes)
-
 
         # Simulated wait for action completion
         #QTimer.singleShot(5000, lambda: self.updateBtn.setEnabled(True))
