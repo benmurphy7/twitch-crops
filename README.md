@@ -10,7 +10,7 @@ This could become a useful tool for viewers, providing a way to watch the best m
 Built with [Python 3.8.6](https://www.python.org/downloads/release/python-386/)
 
 
-##Setup:
+## Setup:
 
 Create [Twitch client ID & client secret](https://dev.twitch.tv/console/apps) and create ```clientInfo.txt``` in root directory.
 
@@ -23,7 +23,7 @@ clientInfo.txt:
 Run with ```python main.py```
 
 Note: You will also be prompted to enter this information for [Twitch Chat Downloader](https://github.com/PetterKraabol/Twitch-Chat-Downloader) when first running. <br/>(This should change in the future) <br/><br/> Downloading chat logs can be slow, and Twitch does not currently provide an API to access full chat logs directly. <br/> (This may change as well)
-##Using the UI:
+## Using the UI:
 
 Enter a stream video ID which will update the available emotes for that channel, and add optional filters.
 
