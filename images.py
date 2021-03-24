@@ -2,13 +2,12 @@ import hashlib
 import os
 from collections import defaultdict
 from io import BytesIO
+from itertools import count, chain
 from random import randrange
 from tkinter import *
 
-from PIL import Image
 import requests as req
-from itertools import count, chain
-
+from PIL import Image
 
 images_dir = "Images"
 

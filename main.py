@@ -1,19 +1,15 @@
-import warnings
-
-import numpy as np
-import tcd
-import os
-from os import path
 import datetime
-import operator
-import matplotlib.pyplot as plt
-from scipy.interpolate import make_interp_spline
-from scipy.signal import find_peaks
+import os
+import warnings
 import webbrowser
-import collect
-import display
+from os import path
+
+import matplotlib.pyplot as plt
 import mplcursors
-import images
+import numpy as np
+from scipy.signal import find_peaks
+
+import display
 
 download_dir = "Downloads"
 

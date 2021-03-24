@@ -1,18 +1,8 @@
-import os
-import subprocess
-from collections import defaultdict
-from io import BytesIO
-from random import randrange
-from time import sleep
-from tkinter import *
-from PIL import Image, ImageTk
-import requests as req
-from itertools import count, cycle, chain
-
-from PyQt5 import QtCore, QtGui, QtWidgets, uic
-from PyQt5.QtCore import QTimer, Qt, QProcess
-from PyQt5.QtGui import QMovie
 import sys
+
+from PyQt5 import QtWidgets, uic
+from PyQt5.QtCore import Qt, QProcess
+from PyQt5.QtGui import QMovie
 
 import collect
 import images

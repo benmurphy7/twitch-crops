@@ -1,6 +1,7 @@
+import re
+
 import requests as req
 import twitch
-import re
 
 chat_emotes = {}
 
