@@ -11,7 +11,11 @@ from scipy.interpolate import make_interp_spline
 from scipy.signal import find_peaks
 import webbrowser
 import collect
+import display
 import mplcursors
+import images
+
+download_dir = "Downloads"
 
 
 def to_timestamp(secs):
@@ -79,7 +83,7 @@ def add_value(k, v, d):
     return d
 
 
-def timestamp_url(secs):
+def timestamp_url(video_id, secs):
     url = "http://twitch.tv/videos/" + video_id + "?t=" + link_time(secs)
     return url
 
@@ -95,13 +99,21 @@ def is_new_max(list, value):
 
 # Returning (timestamp, count) for each window. Count is just highest count of any emote.
 # Should track the prominent emote for each window
-def log_emotes(parsed, emotes, window_size, filter_list=[]):
+def log_emotes(parsed, emotes, window_size, filters=[]):
     log_emotes_list = []
+    filter_list = []
+    # Remove duplicates
+    [filter_list.append(x) for x in filters if x not in filter_list]
+
     # Check for all emotes containing any words in filters
     if len(filter_list) > 0:
         for emote in emotes:
             for filter in filter_list:
-                if filter in emote:
+                # Quoted filters should match exactly
+                if filter[0] == "\"":
+                    if filter.replace("\"", "") in emote:
+                        log_emotes_list.append(emote)
+                elif filter == emote:
                     log_emotes_list.append(emote)
     else:
         log_emotes_list = emotes
@@ -113,7 +125,6 @@ def log_emotes(parsed, emotes, window_size, filter_list=[]):
     # Merging repeated windows
     first_timestamp = ""
     prev_emote = ""
-    window_count = 0
     top_counts = []
 
     for set in parsed:
@@ -127,8 +138,6 @@ def log_emotes(parsed, emotes, window_size, filter_list=[]):
             # Get max from ending window
             top_pair = max_value_pair(window_data)
             window_timestamp = to_timestamp(rounded_time)
-
-            window_count += 1
             top_emote = top_pair[0]
             top_count = top_pair[1]
 
@@ -174,7 +183,7 @@ def log_emotes(parsed, emotes, window_size, filter_list=[]):
     return times
 
 
-def show_peaks(times, limit=-1):
+def plot_video_data(video_id, times, limit=-1):
 
     best_times = []
     best_labels = []
@@ -184,10 +193,12 @@ def show_peaks(times, limit=-1):
     if limit > 0:
         # [(k,(l,v))]
         sorted_items = sorted(list(times.items()), key=lambda x: x[1][1], reverse=True)
-        while len(best_times) < limit:
-            # best_labels.append(sorted_items[len(best_labels)][1][0])
-            # best_values.append(sorted_items[len(best_values)][1][1])
-            best_times.append(sorted_items[len(best_times)][0])
+        while len(best_times) < min(limit, len(sorted_items)):
+            emote = sorted_items[len(best_times)][1][0]
+            if emote != "null":
+                best_times.append(sorted_items[len(best_times)][0])
+            else:
+                limit = -1
 
         best_times = sorted(best_times)
 
@@ -221,28 +232,13 @@ def show_peaks(times, limit=-1):
     x = best_times
     y = best_values
 
+
     fig, ax = plt.subplots()
     scatter = ax.scatter(x, y, picker=True)
 
     fig.canvas.set_window_title("Chat Reactions Over Played Stream")
-    fig.suptitle(video_title + "\nChannel:  " + channel)
-
-
-
-
-    #plt.scatter(x, y)
-
-    # Label points
-    """
-    for x, y in zip(x, y):
-        label = f"({x})"
-
-        plt.annotate(label,  # this is the text
-                     (x, y),  # this is the point to label
-                     textcoords="offset points",  # how to position the text
-                     xytext=(0, 10),  # distance from text to points (x,y)
-                     ha='center')  # horizontal alignment can be left, right or center
-    """
+    #fig.suptitle(video_title + "\nChannel:  " + channel)
+    fig.suptitle("Top Reactions")
 
     # Show info when hovering cursor
     mplcursors.cursor(hover=True).connect(
@@ -261,9 +257,10 @@ def show_peaks(times, limit=-1):
             fig.canvas.draw()
             timestamp = x[ind]
             link_secs = get_seconds(timestamp) - 10
-            webbrowser.open(timestamp_url(link_secs), new=0, autoraise=True)
-        except:
+            webbrowser.open(timestamp_url(video_id, link_secs), new=0, autoraise=True)
+        except Exception as e:
             #Ignore error for now... not breaking functionality
+            print(e)
             pass
 
     fig.canvas.mpl_connect('pick_event', on_pick)
@@ -279,45 +276,54 @@ def plot_dict(dict):
     plt.plot(x, y)
     plt.show()
 
+def chat_log_exists(video_id):
+    log_path = download_dir + "/{}.log".format(video_id)
+    return path.exists(log_path)
 
-if __name__ == '__main__':
-    download_dir = "./Downloads"
-    video_id = "955306254"
+def parse_vod_log(video_id, chat_emotes, custom_filters):
+    emotes_list = sorted(list(chat_emotes.keys()), key=len, reverse=True)
     log_path = download_dir + "/{}.log".format(video_id)
 
     if not path.exists(log_path):
-        print("Chat log not found. Downloading...")
-        os.system("tcd --video {} --format irc --output {}".format(video_id, download_dir))
+        print("Chat log not found.")
+        #os.system("tcd --video {} --format irc --output {}".format(video_id, download_dir))
     else:
         print("Log already exists")
 
-    chat_emotes, video_title, channel = collect.get_available_emotes(video_id)
-    # Order keys by length desc
-    emotes_list = sorted(list(chat_emotes.keys()), key=len, reverse=True)
-    custom_filters = ["OMEGALUL","KEKW", "LULW", "Pepepains"]
-
-    print("Analyzing chat...")
-
-    # parsed : [timestamp, user, message]
     parsed = parse_log(log_path)
     data = log_emotes(parsed, emotes_list, 5, custom_filters)
-    # plot_dict(data)
-    # times = parse(log_path, emotes_list)
-    # For smaller streams, clustering by time is necessary since overlap is rare
-    # Try grouping counts by x seconds (5?) - larger span could be a problem with spam
-    # Get the most used emote within that timeframe, save as K = timestamp, V = (count,emote)
-    # Result - thrown off by spam, difficult to get moment pinpoint from plot
-    # smoothed = smoothData(times, 15)
-    show_peaks(data, 50)
+    return data
 
-    # print(toTimestamp(max(times.items(), key=operator.itemgetter(1))[0]))
-    # Very slow - need to process this before plotting
-    # plotDict(times)
+if __name__ == '__main__':
+
+    check_for_dirs = ["Images", "Downloads"]
+    for dir in check_for_dirs:
+        if not os.path.exists(dir):
+            os.makedirs(dir)
+
+    display.create_qt_window()
+
+
 
 #TODO: Basic UI (Tkinter or webapp)
     # visual emote filtering
     # visualize stats
     # embedded video player for linking
+
+    # Enter VOD ID, show video/emote info, print download status
+    # Display table of all available emotes (scrollable section) - ability to search for non-case-sensitive contains, also filter by source
+    # Comma separated list of emotes (case sensitive), with words in quotes for contains
+    # Display stats such as...
+        # Largest reactions (per unique emote?)
+        # Most commot reactions (most windows)
+        # Total reactions per emote
+
+#TODO: Clean up - download/harvest
+
+#TODO: Fix searching for text emotes ex: ":)" - the regex for these twitch emotes needs to be cleaned
+    #Ignore: -? and \\ , map \\&lt\\; to <, \\&gt\\; to >
+
+#TODO: Fix transparent gif issue
 
 #TODO: Reactions that last longer should be highlighted in some way?
 

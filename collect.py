@@ -12,7 +12,7 @@ def get_client_info(file):
 def add_emote(key, url):
     global chat_emotes
     if key not in chat_emotes:
-        chat_emotes[key] = 0
+        chat_emotes[key] = url
         return 1
     else:
         return 0
@@ -26,13 +26,13 @@ def get_emote_info(emote):
 def add_bttv_emote(emote):
     bttv_url = "https://cdn.betterttv.net/emote/"
     name, id = get_emote_info(emote)
-    url = bttv_url + str(id) + "/3x"
+    url = bttv_url + str(id) + "/1x"
     return add_emote(name, url)
 
 def add_ttv_emote(emote):
     ttv_url = "https://static-cdn.jtvnw.net/emoticons/v1/"
     name, id = get_emote_info(emote)
-    url = ttv_url + str(id) + "/3.0"
+    url = ttv_url + str(id) + "/1.0"
     return add_emote(name, url)
 
 def get_available_emotes(video_id):
@@ -42,15 +42,19 @@ def get_available_emotes(video_id):
     # FFZ
 
     global chat_emotes
+    chat_emotes = {}
     user_name = ""
     user_id = ""
 
     client_id, client_secret = get_client_info('./clientInfo.txt')
     client = twitch.Helix(client_id=client_id, client_secret=client_secret)
 
-    for video in client.videos(video_id):
-        user_name = video.user_name
-        user_id = video.user_id
+    try:
+        for video in client.videos(video_id):
+            user_name = video.user_name
+            user_id = video.user_id
+    except:
+        return chat_emotes, user_id, user_name
 
     print("\nVideo title: " + video.title)
     print("Channel: " + user_name)
@@ -87,7 +91,7 @@ def get_available_emotes(video_id):
                 name = emoticon['name']
                 url_dict = emoticon['urls']
                 # Get highest resolution image available
-                url = url_dict[list(url_dict)[-1]]
+                url = "https:" + url_dict[list(url_dict)[0]]
                 ffz += add_emote(name, url)
     except:
         print("Error loading FFZ emotes")
