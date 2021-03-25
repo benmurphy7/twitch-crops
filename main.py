@@ -160,17 +160,6 @@ def log_emotes(parsed, emotes, window_size, filters=[]):
             window_start = rounded_time
             window_data = {}
 
-        """
-        if len(filter_list) > 0:
-            for word in filter_list:
-                if word in message:
-                    cleaned = message.replace(word, "", 1)
-                    # Message contains more than a single emote - ignore
-                    if cleaned != "":
-                        break
-                    window_data = add_value(word, 1, window_data)
-        """
-
         # Ignore lines with multiple emote instances (Generally spam, reactions are single emotes)
         for emote in log_emotes_list:
             if emote in message:
@@ -260,7 +249,7 @@ def plot_video_data(video_id, times, limit=-1):
             webbrowser.open(timestamp_url(video_id, link_secs), new=0, autoraise=True)
         except Exception as e:
             #Ignore error for now... not breaking functionality
-            print(e)
+            #print(e)
             pass
 
     fig.canvas.mpl_connect('pick_event', on_pick)
@@ -283,13 +272,6 @@ def chat_log_exists(video_id):
 def parse_vod_log(video_id, chat_emotes, custom_filters):
     emotes_list = sorted(list(chat_emotes.keys()), key=len, reverse=True)
     log_path = download_dir + "/{}.log".format(video_id)
-
-    if not path.exists(log_path):
-        print("Chat log not found.")
-        #os.system("tcd --video {} --format irc --output {}".format(video_id, download_dir))
-    else:
-        print("Log already exists")
-
     parsed = parse_log(log_path)
     data = log_emotes(parsed, emotes_list, 5, custom_filters)
     return data

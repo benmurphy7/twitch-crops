@@ -153,9 +153,6 @@ class Ui(QtWidgets.QMainWindow):
             item = emote_area.takeAt(0)
             widget = item.widget()
             widget.setParent(None)
-            # if widget has some id attributes you need to
-            # save in a list to maintain order, you can do that here
-            # i.e.:   aList.append(widget.someId)
             widget.deleteLater()
 
         # Remove existing items in scroll area GridLayout
@@ -189,3 +186,5 @@ def create_qt_window():
     sys.exit(app.exec_())
 
 #TODO: Parallel request threads for image downloading
+#TODO: Handle different emote images with same name (use emoteID)
+#TODO: ALlow analysis of existing logs while download process is running
