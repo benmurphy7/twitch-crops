@@ -10,6 +10,7 @@ import numpy as np
 from scipy.signal import find_peaks
 
 from common import util
+from common.util import get_seconds, to_timestamp, timestamp_url
 
 
 def track_emotes(parsed, emotes, window_size, filters=None):
@@ -101,7 +102,8 @@ def track_emotes(parsed, emotes, window_size, filters=None):
     return times, log_emotes_list, None
 
 
-def plot_video_data(video_id, times, filters, limit=50, offset=10):
+def plot_video_data(video_id, times, filters, limit, offset):
+
     best_times = []
     best_labels = []
     best_values = []
@@ -113,15 +115,17 @@ def plot_video_data(video_id, times, filters, limit=50, offset=10):
         for index, item in zip(range(limit), sorted_items):
             emote = sorted_items[index][1][0]
             if emote != "null":
-                best_times.append(sorted_items[index][0])
+                best_times.append(get_seconds(sorted_items[index][0]))
             else:
                 break
 
-        best_times = sorted(best_times, key=util.get_seconds)
+        #best_times = sorted(best_times, key=get_seconds)
+        best_times = sorted(best_times)
 
         for time in best_times:
-            best_labels.append(times[time][0])
-            best_values.append(times[time][1])
+            timestamp = to_timestamp(time)
+            best_labels.append(times[timestamp][0])
+            best_values.append(times[timestamp][1])
 
     # Show peaks
     else:
@@ -139,54 +143,49 @@ def plot_video_data(video_id, times, filters, limit=50, offset=10):
 
         for peak in peaks:
             time = keys[peak]
-            if times[time][0] != "null":
-                best_times.append(time)
-                best_labels.append(times[time][0])
-                best_values.append(times[time][1])
+            best_times.append(time)
+            best_labels.append(times[time][0])
+            best_values.append(times[time][1])
+
+        avg_val = sum(best_values) / len(best_values)
+        plt.axhline(y=avg_val, color='r', linestyle='-')
 
     x = best_times
     y = best_values
 
-    plt.ion()
+
     fig, ax = plt.subplots()
-    ax.scatter(x, y, picker=True)
+    scatter = ax.scatter(x, y, picker=True)
 
     fig.canvas.set_window_title("Chat Reactions Over Played Stream")
-    # fig.suptitle(video_title + "\nChannel:  " + channel)
-
+    #fig.suptitle(video_title + "\nChannel:  " + channel)
     filter_set = ""
     if filters:
-        max_filters = 5
-        if len(filters) > max_filters:
-            for f in range (0, max_filters):
-                filter_set += filters[f] + ", "
-            filter_set += "... +{} emotes".format(len(filters) - max_filters)
-        else:
-            filter_set = ", ".join([str(filter) for filter in filters])
+        filter_set = ", ".join([str(filter) for filter in filters])
     else:
         filter_set = "All emotes"
-    fig.suptitle("\n".join(wrap("Top Reactions: " + filter_set)))
+    fig.suptitle("Top Reactions: " + filter_set)
 
     # Show info when hovering cursor
     mplcursors.cursor(plt.gca().get_children(), hover=True).connect(
         "add", lambda sel: sel.annotation.set_text(  # Issue hovering over line
-            best_times[sel.target.index] + "\n" + best_labels[sel.target.index]))
+            to_timestamp(best_times[sel.target.index]) + "\n" + best_labels[sel.target.index]))
 
     gca = plt.gca()
     gca.axes.get_xaxis().set_ticks([])
 
-    # TODO: Fix random "'PickEvent' object has no attribute 'ind'" error
+
+    #TODO: Fix random "'PickEvent' object has no attribute 'ind'" error
     def on_pick(event):
         try:
             ind = int(event.ind[0])
             plt.plot(x[ind], y[ind], 'ro')
             fig.canvas.draw()
-            timestamp = x[ind]
-            link_secs = util.get_seconds(timestamp) - offset
-            webbrowser.open(util.timestamp_url(video_id, link_secs), new=0, autoraise=True)
+            link_secs = x[ind] - offset
+            webbrowser.open(timestamp_url(video_id, link_secs), new=0, autoraise=True)
         except Exception as e:
-            # Ignore error for now... not breaking functionality
-            # print(e)
+            #Ignore error for now... not breaking functionality
+            #print(e)
             pass
 
     fig.canvas.mpl_connect('pick_event', on_pick)
