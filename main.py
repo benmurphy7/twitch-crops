@@ -151,7 +151,6 @@ def log_emotes(parsed, emotes, window_size, filters=None):
                 return None, filter
     else:
         log_emotes_list = emotes
-        print("All emotes")
 
     window_start = 0
     window_data = {}
@@ -196,15 +195,16 @@ def log_emotes(parsed, emotes, window_size, filters=None):
             window_data = {}
 
         # Ignore lines with multiple emote instances (Generally spam, reactions are single emotes)
-        for emote in log_emotes_list:
-            names = get_emote_names(emote, multi_emotes)
-            for name in names:
-                if name in message:
-                    cleaned = message.replace(name, "", 1)
-                    # Message contains more than a single emote - ignore
-                    if cleaned != "":
-                        break
-                    window_data = add_value(emote, 1, window_data)
+        if len(message.split(" ")) == 1:
+            for emote in log_emotes_list:
+                names = get_emote_names(emote, multi_emotes)
+                for name in names:
+                    if name in message:
+                        cleaned = message.replace(name, "", 1)
+                        # Message contains more than a single emote - ignore
+                        if cleaned != "":
+                            break
+                        window_data = add_value(emote, 1, window_data)
 
     return times, None
 
