@@ -226,15 +226,17 @@ def plot_video_data(video_id, times, filters, limit=-1):
         for index, item in zip(range(limit), sorted_items):
             emote = sorted_items[index][1][0]
             if emote != "null":
-                best_times.append(sorted_items[index][0])
+                best_times.append(get_seconds(sorted_items[index][0]))
             else:
                 break
 
-        best_times = sorted(best_times, key=get_seconds)
+        #best_times = sorted(best_times, key=get_seconds)
+        best_times = sorted(best_times)
 
         for time in best_times:
-            best_labels.append(times[time][0])
-            best_values.append(times[time][1])
+            timestamp = to_timestamp(time)
+            best_labels.append(times[timestamp][0])
+            best_values.append(times[timestamp][1])
 
     # Show peaks
     else:
@@ -278,7 +280,7 @@ def plot_video_data(video_id, times, filters, limit=-1):
     # Show info when hovering cursor
     mplcursors.cursor(plt.gca().get_children(), hover=True).connect(
         "add", lambda sel: sel.annotation.set_text(  # Issue hovering over line
-            best_times[sel.target.index] + "\n" + best_labels[sel.target.index]))
+            to_timestamp(best_times[sel.target.index]) + "\n" + best_labels[sel.target.index]))
 
     gca = plt.gca()
     gca.axes.get_xaxis().set_ticks([])
@@ -290,8 +292,7 @@ def plot_video_data(video_id, times, filters, limit=-1):
             ind = int(event.ind[0])
             plt.plot(x[ind], y[ind], 'ro')
             fig.canvas.draw()
-            timestamp = x[ind]
-            link_secs = get_seconds(timestamp) - 10
+            link_secs = x[ind] - 10
             webbrowser.open(timestamp_url(video_id, link_secs), new=0, autoraise=True)
         except Exception as e:
             #Ignore error for now... not breaking functionality
