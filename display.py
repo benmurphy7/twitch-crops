@@ -20,7 +20,6 @@ class Ui(QtWidgets.QMainWindow):
         self.chat_emotes = {}
         self.clear_emote_area()
         self.process = None
-        self.downloading = False
 
     def disable_button(self, button):
         button.setDisabled(False)
@@ -63,8 +62,9 @@ class Ui(QtWidgets.QMainWindow):
                 urls = images.missing_emotes(chat_emotes)
                 to_download = len(urls)
                 try:
-                    self.update_status("Downloading images...")
-                    images.get_images(urls)
+                    if len(urls) > 0:
+                        self.update_status("Downloading images...")
+                        images.get_images(urls)
                     """
                     for count, url in enumerate(urls):
                         images.get_image(url)
@@ -87,7 +87,6 @@ class Ui(QtWidgets.QMainWindow):
     def download_process(self):
         try:
             if self.process is None:  # No process running.
-                self.downloading = True
                 self.process = QProcess()  # Keep a reference to the QProcess (e.g. on self) while it's running.
                 self.process.readyReadStandardOutput.connect(self.handle_stdout)
                 self.process.readyReadStandardError.connect(self.handle_stderr)
@@ -144,9 +143,9 @@ class Ui(QtWidgets.QMainWindow):
         if not main.chat_log_exists(self.video_id):
             self.update_status("Downloading:")
             self.download_process()
-        if self.process is None:
+        elif self.process is None:
+            self.update_status("Analyzing...")
             data = main.parse_vod_log(self.video_id, self.chat_emotes, filters)
-            self.downloading = False
             self.update_status("")
             self.harvestBtn.setDisabled(False)
             self.harvestBtn.repaint()
