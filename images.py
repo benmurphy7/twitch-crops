@@ -6,6 +6,10 @@ from itertools import count, chain
 from random import randrange
 from tkinter import *
 
+import gevent.monkey
+gevent.monkey.patch_all()
+
+import grequests as greq
 import requests as req
 from PIL import Image
 
@@ -163,8 +167,9 @@ def image_exists(emote_name):
 def missing_emotes(chat_emotes):
     missing = []
     for emote in chat_emotes:
-        if not image_exists(chat_emotes[emote]):
-            missing.append(emote)
+        url = chat_emotes[emote]
+        if not image_exists(url):
+            missing.append(url)
     return missing
 
 def get_frames(im):
@@ -192,6 +197,19 @@ def save_image(im, name):
     except:
         duration = 100
     save_transparent_gif(images=frames, save_file=file_path, durations=duration)
+
+def request_exception(request, exception):
+    print("Problem: {}: {}".format(request.url, exception))
+
+def get_images(urls):
+    results = multi_request(urls)
+    for idx, result in enumerate(results):
+        image = Image.open(BytesIO(result.content))
+        save_image(image, urls[idx])
+
+def multi_request(urls):
+    results = greq.map((greq.get(u) for u in urls), exception_handler=request_exception, size=None)
+    return results
 
 def download_image(url):
     print("Downloading image: " + url)

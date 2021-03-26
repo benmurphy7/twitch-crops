@@ -60,13 +60,17 @@ class Ui(QtWidgets.QMainWindow):
                 self.channelLabel.setText(channel)
                 self.chat_emotes = chat_emotes
 
-                missing = images.missing_emotes(chat_emotes)
-                to_download = len(missing)
+                urls = images.missing_emotes(chat_emotes)
+                to_download = len(urls)
                 try:
-                    for count, emote in enumerate(missing):
-                        images.get_image(chat_emotes[emote])
+                    self.update_status("Downloading images...")
+                    images.get_images(urls)
+                    """
+                    for count, url in enumerate(urls):
+                        images.get_image(url)
                         self.update_status("Downloading image {}/{}".format(count+1,to_download))
                         QApplication.processEvents()
+                    """
 
                 except Exception as e:
                     print(e)

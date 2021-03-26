@@ -1,5 +1,9 @@
 import re
 
+import gevent.monkey
+gevent.monkey.patch_all()
+
+import grequests as greq
 import requests as req
 import twitch
 
