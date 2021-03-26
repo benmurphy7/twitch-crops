@@ -127,28 +127,34 @@ def apply_filter(filter, emotes, multi_emotes):
 # Returning (timestamp, count) for each window. Count is just highest count of any emote.
 # Should track the prominent emote for each window
 def log_emotes(parsed, emotes, window_size, filters=None):
+    # Dict of emotes with multiple string codes
+    #multi_emotes = {}
     if filters is None:
         filters = []
     log_emotes_list = []
+    normal_emotes = []
     filter_list = []
-    # Dict of emotes with multiple string codes
-    multi_emotes = {}
     # Remove duplicates
     [filter_list.append(x) for x in filters if x not in filter_list]
 
+    """
     for emote in emotes:
         names = collect.get_normal_names(emote)
         if len(names) > 1:
             multi_emotes[emote] = names
+    """
+
+    for emote in emotes:
+        normal_emotes.append(collect.get_normal_name(emote))
 
     # Check for all emotes containing any words in filters
     if filter_list:
         for filter in filter_list:
-            emote_matches = apply_filter(filter, emotes, multi_emotes)
-            if emote_matches:
-                log_emotes_list.extend(emote_matches)
-            else:
-                return None, filter
+            for emote in normal_emotes:
+                if filter_match(filter, emote):
+                    log_emotes_list.append(emote)
+                    break
+
     else:
         log_emotes_list = emotes
 
@@ -197,13 +203,11 @@ def log_emotes(parsed, emotes, window_size, filters=None):
         # Ignore lines with multiple emote instances (Generally spam, reactions are single emotes)
         if len(message.split(" ")) == 1:
             for emote in log_emotes_list:
-                names = get_emote_names(emote, multi_emotes)
-                for name in names:
-                    if name in message:
-                        cleaned = message.replace(name, "", 1)
+                if emote in message:
+                        cleaned = message.replace(emote, "", 1)
                         # Message contains more than a single emote - ignore
                         if cleaned != "":
-                            break
+                            continue
                         window_data = add_value(emote, 1, window_data)
 
     return times, None
@@ -274,7 +278,7 @@ def plot_video_data(video_id, times, filters, limit=-1):
     # Show info when hovering cursor
     mplcursors.cursor(plt.gca().get_children(), hover=True).connect(
         "add", lambda sel: sel.annotation.set_text(  # Issue hovering over line
-            best_times[sel.target.index] + "\n" + collect.get_normal_name(best_labels[sel.target.index])))
+            best_times[sel.target.index] + "\n" + best_labels[sel.target.index]))
 
     gca = plt.gca()
     gca.axes.get_xaxis().set_ticks([])
