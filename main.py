@@ -223,14 +223,14 @@ def plot_video_data(video_id, times, filters, limit=-1):
     if limit > 0:
         # [(k,(l,v))]
         sorted_items = sorted(list(times.items()), key=lambda x: x[1][1], reverse=True)
-        while len(best_times) < min(limit, len(sorted_items)):
-            emote = sorted_items[len(best_times)][1][0]
+        for index, item in zip(range(limit), sorted_items):
+            emote = sorted_items[index][1][0]
             if emote != "null":
-                best_times.append(sorted_items[len(best_times)][0])
+                best_times.append(sorted_items[index][0])
             else:
-                limit = -1
+                break
 
-        best_times = sorted(best_times)
+        best_times = sorted(best_times, key=get_seconds)
 
         for time in best_times:
             best_labels.append(times[time][0])
