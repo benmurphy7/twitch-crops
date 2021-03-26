@@ -16,10 +16,12 @@ class Ui(QtWidgets.QMainWindow):
         uic.loadUi('BasicForm.ui', self) # Load the .ui file
         self.updateBtn.clicked.connect(self.update_stream_info)
         self.harvestBtn.clicked.connect(self.harvest)
+        self.statusLabel.setTextInteractionFlags(Qt.TextSelectableByMouse)
         self.video_id = ""
         self.chat_emotes = {}
         self.clear_emote_area()
         self.process = None
+        self.process_id = ""
 
     def disable_button(self, button):
         button.setDisabled(False)
@@ -44,7 +46,6 @@ class Ui(QtWidgets.QMainWindow):
             self.set_harvest_text(video_id)
             if self.video_id == video_id:
                 pass
-                #self.update_status("Already viewing VOD ID: " + self.video_id)
             else:
                 self.video_id = video_id
                 chat_emotes, video_title, channel = collect.get_available_emotes(video_id)
@@ -60,34 +61,25 @@ class Ui(QtWidgets.QMainWindow):
                 self.chat_emotes = chat_emotes
 
                 urls = images.missing_emotes(chat_emotes)
-                to_download = len(urls)
+
                 try:
                     if len(urls) > 0:
                         self.update_status("Downloading images...")
                         images.get_images(urls)
-                    """
-                    for count, url in enumerate(urls):
-                        images.get_image(url)
-                        self.update_status("Downloading image {}/{}".format(count+1,to_download))
-                        QApplication.processEvents()
-                    """
-
                 except Exception as e:
                     print(e)
 
                 self.display_emotes(chat_emotes)
 
-        # Simulated wait for action completion
-        #QTimer.singleShot(5000, lambda: self.updateBtn.setEnabled(True))
         self.updateBtn.setDisabled(False)
-        if self.process is None:
-            self.harvestBtn.setDisabled(False)
+        self.harvestBtn.setDisabled(False)
         self.update_status("")
 
     def download_process(self):
         try:
             if self.process is None:  # No process running.
                 self.process = QProcess()  # Keep a reference to the QProcess (e.g. on self) while it's running.
+                self.process_id = self.video_id
                 self.process.readyReadStandardOutput.connect(self.handle_stdout)
                 self.process.readyReadStandardError.connect(self.handle_stderr)
                 self.process.stateChanged.connect(self.handle_state)
@@ -127,7 +119,7 @@ class Ui(QtWidgets.QMainWindow):
         self.process = None
         self.harvestBtn.setDisabled(False)
         self.set_harvest_text(self.video_id)
-        self.update_status("")
+        self.update_status("Downloaded video: " + self.process_id)
 
     def set_harvest_text(self, video_id):
         if not main.chat_log_exists(video_id):
@@ -143,7 +135,7 @@ class Ui(QtWidgets.QMainWindow):
         if not main.chat_log_exists(self.video_id):
             self.update_status("Downloading:")
             self.download_process()
-        elif self.process is None:
+        else:
             self.update_status("Analyzing...")
             data = main.parse_vod_log(self.video_id, self.chat_emotes, filters)
             self.update_status("")
@@ -194,6 +186,4 @@ def create_qt_window():
     window.show()
     sys.exit(app.exec_())
 
-#TODO: Parallel request threads for image downloading
-#TODO: Handle different emote images with same name (use emoteID)
 #TODO: ALlow analysis of existing logs while download process is running
