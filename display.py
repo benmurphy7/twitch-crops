@@ -37,16 +37,15 @@ class Ui(QtWidgets.QMainWindow):
         self.updateBtn.repaint()
         self.harvestBtn.setDisabled(True)
         self.harvestBtn.repaint()
-        self.update_status("Fetching stream info...")
         video_id = self.vodEntry.text()
         if len(video_id) != 9:
             self.invalid_id()
             return
         else:
-            self.set_harvest_text(video_id)
             if self.video_id == video_id:
                 pass
             else:
+                self.update_status("Fetching stream info...")
                 self.video_id = video_id
                 chat_emotes, video_title, channel = collect.get_available_emotes(video_id)
                 if channel == "" and video_title == "":
@@ -70,10 +69,10 @@ class Ui(QtWidgets.QMainWindow):
                     print(e)
 
                 self.display_emotes(chat_emotes)
+                self.update_status("")
 
+        self.set_harvest_text(video_id)
         self.updateBtn.setDisabled(False)
-        self.harvestBtn.setDisabled(False)
-        self.update_status("")
 
     def download_process(self):
         try:
@@ -124,8 +123,10 @@ class Ui(QtWidgets.QMainWindow):
     def set_harvest_text(self, video_id):
         if not main.chat_log_exists(video_id):
             self.harvestBtn.setText("Download")
+            self.harvestBtn.setEnabled(self.process is None)
         else:
             self.harvestBtn.setText("Analyze")
+            self.harvestBtn.setEnabled(True)
         self.harvestBtn.repaint()
 
     def harvest(self):
