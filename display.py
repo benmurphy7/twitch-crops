@@ -3,6 +3,7 @@ import sys
 from PyQt5 import QtWidgets, uic
 from PyQt5.QtCore import Qt, QProcess
 from PyQt5.QtGui import QMovie
+from PyQt5.QtWidgets import QApplication
 
 import collect
 import images
@@ -61,9 +62,14 @@ class Ui(QtWidgets.QMainWindow):
 
                 missing = images.missing_emotes(chat_emotes)
                 to_download = len(missing)
-                for count, emote in enumerate(missing):
-                    images.get_image(chat_emotes[emote])
-                    self.update_status("Getting image {}/{}".format(count+1,to_download))
+                try:
+                    for count, emote in enumerate(missing):
+                        images.get_image(chat_emotes[emote])
+                        self.update_status("Downloading image {}/{}".format(count+1,to_download))
+                        QApplication.processEvents()
+
+                except Exception as e:
+                    print(e)
 
                 self.display_emotes(chat_emotes)
 

@@ -102,7 +102,6 @@ def get_available_emotes(video_id):
     global_emotes = req.get('https://api.twitchemotes.com/api/v4/channels/0').json()
     for emote in global_emotes['emotes']:
         ttv += add_ttv_emote(emote)
-        print(emote)
 
     #Get twitch channel emotes
     try:
