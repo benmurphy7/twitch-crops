@@ -107,14 +107,19 @@ def log_emotes(parsed, emotes, window_size, filters=[]):
 
     # Check for all emotes containing any words in filters
     if len(filter_list) > 0:
-        for emote in emotes:
-            for filter in filter_list:
+        for filter in filter_list:
+            valid_filter = False
+            for emote in emotes:
                 # Quoted filters should match exactly
                 if filter[0] == "\"":
                     if filter.replace("\"", "") in emote:
                         log_emotes_list.append(emote)
+                        valid_filter = True
                 elif filter == emote:
                     log_emotes_list.append(emote)
+                    valid_filter = True
+            if not valid_filter:
+                return None, filter
     else:
         log_emotes_list = emotes
 
@@ -169,7 +174,7 @@ def log_emotes(parsed, emotes, window_size, filters=[]):
                     break
                 window_data = add_value(emote, 1, window_data)
 
-    return times
+    return times, None
 
 
 def plot_video_data(video_id, times, limit=-1):
@@ -273,8 +278,7 @@ def parse_vod_log(video_id, chat_emotes, custom_filters):
     emotes_list = sorted(list(chat_emotes.keys()), key=len, reverse=True)
     log_path = download_dir + "/{}.log".format(video_id)
     parsed = parse_log(log_path)
-    data = log_emotes(parsed, emotes_list, 5, custom_filters)
-    return data
+    return log_emotes(parsed, emotes_list, 5, custom_filters)
 
 def set_client_info(file):
     client_id, client_secret = collect.get_client_info(file)
@@ -295,7 +299,10 @@ if __name__ == '__main__':
     setup()
     display.create_qt_window()
 
+#TODO: Fix searching for text emotes ex: ":)" - the regex for these twitch emotes needs to be cleaned
+    #Ignore: -? and \\ , map \\&lt\\; to <, \\&gt\\; to >
 
+#TODO: Fix transparent gif issue
 
 #TODO: Basic UI (Tkinter or webapp)
     # visual emote filtering
@@ -309,13 +316,6 @@ if __name__ == '__main__':
         # Largest reactions (per unique emote?)
         # Most commot reactions (most windows)
         # Total reactions per emote
-
-#TODO: Clean up - download/harvest
-
-#TODO: Fix searching for text emotes ex: ":)" - the regex for these twitch emotes needs to be cleaned
-    #Ignore: -? and \\ , map \\&lt\\; to <, \\&gt\\; to >
-
-#TODO: Fix transparent gif issue
 
 #TODO: Reactions that last longer should be highlighted in some way?
 

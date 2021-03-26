@@ -139,11 +139,14 @@ class Ui(QtWidgets.QMainWindow):
             self.download_process()
         else:
             self.update_status("Analyzing...")
-            data = main.parse_vod_log(self.video_id, self.chat_emotes, filters)
-            self.update_status("")
+            data, invalid = main.parse_vod_log(self.video_id, self.chat_emotes, filters)
             self.harvestBtn.setDisabled(False)
             self.harvestBtn.repaint()
-            main.plot_video_data(self.video_id, data, 50)
+            if invalid is None:
+                self.update_status("")
+                main.plot_video_data(self.video_id, data, 50)
+            else:
+                self.update_status("Error: ' {} ' is not a valid filter".format(invalid))
 
     def update_status(self, message):
         self.statusLabel.repaint()
@@ -187,5 +190,3 @@ def create_qt_window():
     window = Ui()
     window.show()
     sys.exit(app.exec_())
-
-#TODO: ALlow analysis of existing logs while download process is running
