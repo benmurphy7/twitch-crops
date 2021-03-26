@@ -213,7 +213,7 @@ def log_emotes(parsed, emotes, window_size, filters=None):
     return times, None
 
 
-def plot_video_data(video_id, times, filters, limit=-1):
+def plot_video_data(video_id, times, filters, limit=50, offset=10):
 
     best_times = []
     best_labels = []
@@ -291,7 +291,7 @@ def plot_video_data(video_id, times, filters, limit=-1):
             plt.plot(x[ind], y[ind], 'ro')
             fig.canvas.draw()
             timestamp = x[ind]
-            link_secs = get_seconds(timestamp) - 10
+            link_secs = get_seconds(timestamp) - offset
             webbrowser.open(timestamp_url(video_id, link_secs), new=0, autoraise=True)
         except Exception as e:
             #Ignore error for now... not breaking functionality
