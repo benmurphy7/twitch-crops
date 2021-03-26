@@ -84,6 +84,7 @@ class Ui(QtWidgets.QMainWindow):
                 self.process.stateChanged.connect(self.handle_state)
                 self.process.finished.connect(self.process_finished)  # Clean up once complete.
                 self.process.start("tcd", ['--video', self.video_id, '--format', 'irc', '--output', main.download_dir])
+                self.set_harvest_text(self.video_id, True)
         except Exception as e:
             print(e)
 
@@ -120,8 +121,8 @@ class Ui(QtWidgets.QMainWindow):
         self.set_harvest_text(self.video_id)
         self.update_status("Downloaded video: " + self.process_id)
 
-    def set_harvest_text(self, video_id):
-        if not main.chat_log_exists(video_id):
+    def set_harvest_text(self, video_id, update=False):
+        if not main.chat_log_exists(video_id) and not update:
             self.harvestBtn.setText("Download")
             self.harvestBtn.setEnabled(self.process is None)
         else:
