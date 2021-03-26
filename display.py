@@ -144,7 +144,7 @@ class Ui(QtWidgets.QMainWindow):
             self.harvestBtn.repaint()
             if invalid is None:
                 self.update_status("")
-                main.plot_video_data(self.video_id, data, 50)
+                main.plot_video_data(self.video_id, data, filters, 50)
             else:
                 self.update_status("Error: ' {} ' is not a valid filter".format(invalid))
 

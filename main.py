@@ -177,7 +177,7 @@ def log_emotes(parsed, emotes, window_size, filters=[]):
     return times, None
 
 
-def plot_video_data(video_id, times, limit=-1):
+def plot_video_data(video_id, times, filters, limit=-1):
 
     best_times = []
     best_labels = []
@@ -232,10 +232,15 @@ def plot_video_data(video_id, times, limit=-1):
 
     fig.canvas.set_window_title("Chat Reactions Over Played Stream")
     #fig.suptitle(video_title + "\nChannel:  " + channel)
-    fig.suptitle("Top Reactions")
+    filter_set = ""
+    if len(filters) > 0:
+        filter_set = ", ".join([str(filter) for filter in filters])
+    else:
+        filter_set = "All emotes"
+    fig.suptitle("Top Reactions: " + filter_set)
 
     # Show info when hovering cursor
-    mplcursors.cursor(hover=True).connect(
+    mplcursors.cursor(plt.gca().get_children(), hover=True).connect(
         "add", lambda sel: sel.annotation.set_text(  # Issue hovering over line
             best_times[sel.target.index] + "\n" + best_labels[sel.target.index]))
 
