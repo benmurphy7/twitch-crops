@@ -150,12 +150,12 @@ def save_transparent_gif(images, durations, save_file):
     root_frame, save_args = _create_animated_gif(images, durations)
     root_frame.save(save_file, **save_args)
 
-def get_image_id(name):
+def get_image_hash(name):
    return hashlib.md5(name.encode()).hexdigest()
 
-def download_image(name, url):
-    image = get_image(url)
-    save_image(image, name)
+def get_image(url):
+    image = download_image(url)
+    save_image(image, url)
 
 def image_exists(emote_name):
     return os.path.isfile(get_path(emote_name))
@@ -163,7 +163,7 @@ def image_exists(emote_name):
 def missing_emotes(chat_emotes):
     missing = []
     for emote in chat_emotes:
-        if not image_exists(emote):
+        if not image_exists(chat_emotes[emote]):
             missing.append(emote)
     return missing
 
@@ -181,8 +181,8 @@ def get_frames(im):
 
     return frames
 
-def get_path(emote_name):
-    return main.images_dir + os.path.sep + get_image_id(emote_name) + ".gif"
+def get_path(name):
+    return main.images_dir + os.path.sep + get_image_hash(name) + ".gif"
 
 def save_image(im, name):
     file_path = get_path(name)
@@ -193,7 +193,7 @@ def save_image(im, name):
         duration = 100
     save_transparent_gif(images=frames, save_file=file_path, durations=duration)
 
-def get_image(url):
+def download_image(url):
     print("Downloading image: " + url)
     response = req.get(url)
     image = Image.open(BytesIO(response.content))

@@ -62,7 +62,7 @@ class Ui(QtWidgets.QMainWindow):
                 missing = images.missing_emotes(chat_emotes)
                 to_download = len(missing)
                 for count, emote in enumerate(missing):
-                    images.download_image(emote, chat_emotes[emote])
+                    images.get_image(chat_emotes[emote])
                     self.update_status("Getting image {}/{}".format(count+1,to_download))
 
                 self.display_emotes(chat_emotes)
@@ -166,7 +166,7 @@ class Ui(QtWidgets.QMainWindow):
         self.clear_emote_area()
         names = sorted(chat_emotes.keys(), key=lambda s: s.lower())
         for name in names:
-            movie = QMovie(images.get_path(name))
+            movie = QMovie(images.get_path(chat_emotes[name]))
             label = QtWidgets.QLabel()
             label.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
             label.setMovie(movie)
