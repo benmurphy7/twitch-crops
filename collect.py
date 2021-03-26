@@ -1,9 +1,10 @@
+import html
 import re
 
+import exrex
 import gevent.monkey
 gevent.monkey.patch_all()
 
-import grequests as greq
 import requests as req
 import twitch
 
@@ -27,6 +28,16 @@ def get_value(key, str):
 
 def get_emote_info(emote):
     return emote['code'], emote['id']
+
+def get_normal_name(emote):
+    return html.unescape(next(exrex.generate(emote)))
+
+def get_normal_names(emote):
+    normal_names = []
+    for gen in exrex.generate(emote):
+        normal = html.unescape(gen)
+        normal_names.append(normal)
+    return normal_names
 
 def add_bttv_emote(emote):
     bttv_url = "https://cdn.betterttv.net/emote/"

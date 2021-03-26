@@ -1,5 +1,7 @@
+import html
 import sys
 
+import exrex
 from PyQt5 import QtWidgets, uic
 from PyQt5.QtCore import Qt, QProcess
 from PyQt5.QtGui import QMovie
@@ -62,7 +64,7 @@ class Ui(QtWidgets.QMainWindow):
                 urls = images.missing_emotes(chat_emotes)
 
                 try:
-                    if len(urls) > 0:
+                    if urls:
                         self.update_status("Downloading images...")
                         images.get_images(urls)
                 except Exception as e:
@@ -179,7 +181,7 @@ class Ui(QtWidgets.QMainWindow):
             movie.start()
 
             text = QtWidgets.QLabel()
-            text.setText(name)
+            text.setText(collect.get_normal_name(name))
             text.setTextInteractionFlags(Qt.TextSelectableByMouse)
 
             emote_area.addWidget(label)

@@ -10,6 +10,8 @@ import mplcursors
 import numpy as np
 from scipy.signal import find_peaks
 
+import exrex
+
 import collect
 import display
 
@@ -70,7 +72,7 @@ def round_down(num, divisor):
 
 def max_value_pair(x):
     sorted_x = sorted(x.items(), key=lambda item: item[1], reverse=True)
-    if len(sorted_x) < 1:
+    if not sorted_x:
         return "null", -1
     return sorted_x[0]
 
@@ -89,39 +91,67 @@ def timestamp_url(video_id, secs):
 
 
 def is_new_max(list, value):
-    if len(list) != 0:
+    if list:
         for item in list:
             if value > item:
                 return True
     else:
         return True
 
+def filter_match(filter, string):
+    if filter[0] == "\"":
+        if filter.replace("\"", "") in string:
+            return True
+    elif filter == string:
+        return True
+    return False
+
+def get_emote_names(emote, multi_emotes):
+    names = []
+    if emote in multi_emotes:
+        names = multi_emotes[emote]
+    else:
+        names.append(emote)
+    return names
+
+def apply_filter(filter, emotes, multi_emotes):
+    matches = []
+    for emote in emotes:
+        names = get_emote_names(emote, multi_emotes)
+        for name in names:
+            if filter_match(filter, name):
+                matches.append(emote)
+                break
+    return matches
 
 # Returning (timestamp, count) for each window. Count is just highest count of any emote.
 # Should track the prominent emote for each window
-def log_emotes(parsed, emotes, window_size, filters=[]):
+def log_emotes(parsed, emotes, window_size, filters=None):
+    if filters is None:
+        filters = []
     log_emotes_list = []
     filter_list = []
+    # Dict of emotes with multiple string codes
+    multi_emotes = {}
     # Remove duplicates
     [filter_list.append(x) for x in filters if x not in filter_list]
 
+    for emote in emotes:
+        names = collect.get_normal_names(emote)
+        if len(names) > 1:
+            multi_emotes[emote] = names
+
     # Check for all emotes containing any words in filters
-    if len(filter_list) > 0:
+    if filter_list:
         for filter in filter_list:
-            valid_filter = False
-            for emote in emotes:
-                # Quoted filters should match exactly
-                if filter[0] == "\"":
-                    if filter.replace("\"", "") in emote:
-                        log_emotes_list.append(emote)
-                        valid_filter = True
-                elif filter == emote:
-                    log_emotes_list.append(emote)
-                    valid_filter = True
-            if not valid_filter:
+            emote_matches = apply_filter(filter, emotes, multi_emotes)
+            if emote_matches:
+                log_emotes_list.extend(emote_matches)
+            else:
                 return None, filter
     else:
         log_emotes_list = emotes
+        print("All emotes")
 
     window_start = 0
     window_data = {}
@@ -167,12 +197,14 @@ def log_emotes(parsed, emotes, window_size, filters=[]):
 
         # Ignore lines with multiple emote instances (Generally spam, reactions are single emotes)
         for emote in log_emotes_list:
-            if emote in message:
-                cleaned = message.replace(emote, "", 1)
-                # Message contains more than a single emote - ignore
-                if cleaned != "":
-                    break
-                window_data = add_value(emote, 1, window_data)
+            names = get_emote_names(emote, multi_emotes)
+            for name in names:
+                if name in message:
+                    cleaned = message.replace(name, "", 1)
+                    # Message contains more than a single emote - ignore
+                    if cleaned != "":
+                        break
+                    window_data = add_value(emote, 1, window_data)
 
     return times, None
 
@@ -233,7 +265,7 @@ def plot_video_data(video_id, times, filters, limit=-1):
     fig.canvas.set_window_title("Chat Reactions Over Played Stream")
     #fig.suptitle(video_title + "\nChannel:  " + channel)
     filter_set = ""
-    if len(filters) > 0:
+    if filters:
         filter_set = ", ".join([str(filter) for filter in filters])
     else:
         filter_set = "All emotes"
@@ -242,7 +274,7 @@ def plot_video_data(video_id, times, filters, limit=-1):
     # Show info when hovering cursor
     mplcursors.cursor(plt.gca().get_children(), hover=True).connect(
         "add", lambda sel: sel.annotation.set_text(  # Issue hovering over line
-            best_times[sel.target.index] + "\n" + best_labels[sel.target.index]))
+            best_times[sel.target.index] + "\n" + collect.get_normal_name(best_labels[sel.target.index])))
 
     gca = plt.gca()
     gca.axes.get_xaxis().set_ticks([])
