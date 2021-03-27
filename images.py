@@ -204,8 +204,8 @@ def request_exception(request, exception):
 def get_images(urls):
     results = multi_request(urls)
     for idx, result in enumerate(results):
-        image = Image.open(BytesIO(result.content))
-        save_image(image, urls[idx])
+        with open(get_path(urls[idx]), 'wb') as f:
+            f.write(result.content)
 
 def multi_request(urls):
     results = greq.map((greq.get(u) for u in urls), exception_handler=request_exception, size=None)

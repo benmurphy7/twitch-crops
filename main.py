@@ -340,8 +340,11 @@ if __name__ == '__main__':
     setup()
     display.create_qt_window()
 
+#TODO: Allow updating a previously downloaded log
+
 #TODO: Fix searching for text emotes ex: ":)" - the regex for these twitch emotes needs to be cleaned
-    #Ignore: -? and \\ , map \\&lt\\; to <, \\&gt\\; to >
+    #Regex/html handled - but some twitch emotes contain invalid regex evals in their codes
+    #Will need to manually create a table to map the codes to their actual chat text
 
 #TODO: Fix transparent gif issue
 
