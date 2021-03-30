@@ -53,7 +53,7 @@ class Ui(QtWidgets.QMainWindow):
 
             self.titleLabel.setText(collect.video_info.title)
             self.channelLabel.setText(collect.video_info.user_name)
-            self.lengthLabel.setText(collect.video_info.duration)
+            self.lengthLabel.setText(util.space_timestamp(collect.video_info.duration))
             self.chat_emotes = chat_emotes
 
             urls = images.missing_emotes(chat_emotes)

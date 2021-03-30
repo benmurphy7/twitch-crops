@@ -56,6 +56,9 @@ def add_value(k, v, d):
         d[k] = v
     return d
 
+def space_timestamp(timestamp):
+    return timestamp.replace("h", "h ").replace("m", "m ")
+
 def timestamp_url(video_id, secs):
     url = "http://twitch.tv/videos/" + video_id + "?t=" + link_time(secs)
     return url
