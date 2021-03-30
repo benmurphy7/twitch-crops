@@ -1,7 +1,8 @@
 import sys
+import time
 import warnings
 
-from PyQt5 import QtWidgets, uic
+from PyQt5 import QtWidgets, uic, QtCore
 from PyQt5.QtCore import Qt, QProcess
 from PyQt5.QtGui import QMovie
 
@@ -151,6 +152,10 @@ class Ui(QtWidgets.QMainWindow):
             self.update_status("Syncing latest changes...")
             self.download_process()
         else:
+            if not log.chat_log_exists(self.video_id):
+                self.harvestBtn.setDisabled(False)
+                self.harvestBtn.repaint()
+                return
             self.update_status("Analyzing...")
             data, invalid = log.parse_vod_log(self.video_id, self.chat_emotes, filters, int(self.windowSize.text()))
             self.harvestBtn.setDisabled(False)
