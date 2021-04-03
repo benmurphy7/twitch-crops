@@ -189,6 +189,9 @@ class Ui(QtWidgets.QMainWindow):
         emote_area = self.scrollAreaWidgetContents.layout()
         self.clear_emote_area()
         names = sorted(chat_emotes.keys(), key=lambda s: s.lower())
+        cols = 8
+        x = 0
+        y = 0
         for name in names:
             movie = QMovie(images.get_path(chat_emotes[name]))
             label = QtWidgets.QLabel()
@@ -202,8 +205,13 @@ class Ui(QtWidgets.QMainWindow):
             text.setText(util.get_normal_name(name))
             text.setTextInteractionFlags(Qt.TextSelectableByMouse)
 
-            emote_area.addWidget(label)
-            emote_area.addWidget(text)
+            emote_area.addWidget(label, y, x)
+            emote_area.addWidget(text, y, x+1)
+
+            x += 2
+            if x >= cols:
+                x = 0
+                y += 1
 
 def create_qt_window():
     app = QtWidgets.QApplication(sys.argv)  # Create an instance of QtWidgets.QApplication

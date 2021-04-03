@@ -12,8 +12,6 @@ chat_emotes = {}
 client = None #twitch.Helix()
 video_info: None #twitch.Helix.video()
 
-rechat_url = "https://rechat.twitch.tv/rechat-messages"
-
 def get_client_info(file):
     with open(file) as f:
         lines = f.readlines()
