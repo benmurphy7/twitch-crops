@@ -90,7 +90,7 @@ class Ui(QtWidgets.QMainWindow):
         try:
             data = self.process.readAllStandardError()
             stderr = bytes(data).decode("utf8")
-            #self.update_status(stderr)
+            # self.update_status(stderr)
             print(stderr)
         except Exception as e:
             print(e)
@@ -138,6 +138,7 @@ class Ui(QtWidgets.QMainWindow):
                 self.enable_download("Sync")
 
             self.harvestBtn.repaint()
+
         except Exception as e:
             print(e)
 
@@ -162,7 +163,8 @@ class Ui(QtWidgets.QMainWindow):
             self.harvestBtn.repaint()
             if invalid is None:
                 self.update_status("")
-                analyze.plot_video_data(self.video_id, data, filters, int(self.showMax.text()), int(self.linkOffset.text()))
+                analyze.plot_video_data(self.video_id, data, filters, int(self.showMax.text()),
+                                        int(self.linkOffset.text()))
             else:
                 self.update_status("Error: ' {} ' is not a valid filter".format(invalid))
 
@@ -206,12 +208,13 @@ class Ui(QtWidgets.QMainWindow):
             text.setTextInteractionFlags(Qt.TextSelectableByMouse)
 
             emote_area.addWidget(label, y, x)
-            emote_area.addWidget(text, y, x+1)
+            emote_area.addWidget(text, y, x + 1)
 
             x += 2
             if x >= cols:
                 x = 0
                 y += 1
+
 
 def create_qt_window():
     app = QtWidgets.QApplication(sys.argv)  # Create an instance of QtWidgets.QApplication
