@@ -36,10 +36,14 @@ def track_emotes(parsed, emotes, window_size, filters=None):
     # Check for all emotes containing any words in filters
     if filter_list:
         for filter in filter_list:
+            valid = False
             for emote in normal_emotes:
                 if util.filter_match(filter, emote):
+                    valid = True
                     log_emotes_list.append(emote)
                     break
+            if not valid:
+                return None, filter
 
     else:
         log_emotes_list = emotes
