@@ -38,6 +38,8 @@ if __name__ == '__main__':
 # Most commot reactions (most windows)
 # Total reactions per emote
 
+#TODO: Fix log sync bug causing comments to restart
+
 # TODO: Test continued log updates
 # TODO: Support truncating log file? (cleanup fragment cursors)
 

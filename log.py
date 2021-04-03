@@ -71,7 +71,7 @@ def get_last_lines(file, n=2):
             new_byte = f.read(1)
             if new_byte == b'\n':
                 # Decode and remove remaining EOL characters (Windows)
-                line = buffer.decode()[::-1].replace("\r", "")
+                line = buffer.decode(errors='replace')[::-1].replace("\r", "")
                 # Ignore empty lines
                 if line:
                     list_of_lines.append(line)
@@ -80,8 +80,6 @@ def get_last_lines(file, n=2):
                 buffer = bytearray()
             else:
                 buffer.extend(new_byte)
-        if len(buffer) > 0:
-            list_of_lines.append(buffer.decode()[::-1])
     return list_of_lines
 
 
@@ -201,5 +199,6 @@ def cursor_update(video_id):
 
         return cursor
 
-    except:
+    except Exception as e:
+        print(e)
         return ''
