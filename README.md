@@ -8,11 +8,10 @@ The starting point is to track and visualize emote usage over time. This data ca
 This could become a useful tool for viewers, providing a way to watch the best moments from a longer broadcast without the employment of an editor.
 
 -Built with [Python 3.8.6](https://www.python.org/downloads/release/python-386/) <br/>
--Chat logs downloaded using [Twitch Chat Downloader](https://github.com/PetterKraabol/Twitch-Chat-Downloader)
 
 ## Setup:
 
-Get  [Twitch client ID & client secret](https://dev.twitch.tv/console/apps) and create ```clientInfo.txt``` in root directory
+Get  [Twitch client ID & client secret](https://dev.twitch.tv/console/apps) and create ```clientInfo.txt``` in base directory
 
 ```
 clientInfo.txt:

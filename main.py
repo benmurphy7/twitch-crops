@@ -9,16 +9,10 @@ images_dir = "Images"
 client_info = "clientInfo.txt"
 
 
-def set_client_info(file):
-    client_id, client_secret = collect.get_client_info(file)
-    os.system("tcd --client-id {} --client-secret {}".format(client_id, client_secret))
-
-
 def setup():
     if not os.path.exists(client_info):
         print("Error: clientInfo.txt not found")
         sys.exit(0)
-    set_client_info(client_info)
 
     check_for_dirs = [images_dir, download_dir]
     for dir in check_for_dirs:
