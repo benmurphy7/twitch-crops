@@ -7,6 +7,7 @@ from random import randrange
 from tkinter import *
 
 import gevent.monkey
+
 gevent.monkey.patch_all()
 
 import grequests as greq
@@ -64,7 +65,7 @@ class TransparentAnimatedGifConverter(object):
         self._palette_replaces['idx_from'].append(0)
         self._palette_replaces['idx_to'].append(new_idx)
         self._img_p_parsedpalette[new_idx] = self._img_p_parsedpalette[0]
-        del(self._img_p_parsedpalette[0])
+        del (self._img_p_parsedpalette[0])
 
     def _get_unused_color(self) -> tuple:
         """ Return a color for the palette that does not collide with any other already in the palette."""
@@ -113,6 +114,7 @@ class TransparentAnimatedGifConverter(object):
         self._img_p.info['background'] = 0
         return self._img_p
 
+
 def _create_animated_gif(images, durations):
     """If the image is a GIF, create an its thumbnail here."""
     save_kwargs = dict()
@@ -154,15 +156,19 @@ def save_transparent_gif(images, durations, save_file):
     root_frame, save_args = _create_animated_gif(images, durations)
     root_frame.save(save_file, **save_args)
 
+
 def get_image_hash(name):
-   return hashlib.md5(name.encode()).hexdigest()
+    return hashlib.md5(name.encode()).hexdigest()
+
 
 def get_image(url):
     image = download_image(url)
     save_image(image, url)
 
+
 def image_exists(emote_name):
     return os.path.isfile(get_path(emote_name))
+
 
 def missing_emotes(chat_emotes):
     missing = []
@@ -171,6 +177,7 @@ def missing_emotes(chat_emotes):
         if not image_exists(url):
             missing.append(url)
     return missing
+
 
 def get_frames(im):
     if isinstance(im, str):
@@ -186,8 +193,10 @@ def get_frames(im):
 
     return frames
 
+
 def get_path(name):
     return main.images_dir + os.path.sep + get_image_hash(name) + ".gif"
+
 
 def save_image(im, name):
     file_path = get_path(name)
@@ -198,8 +207,10 @@ def save_image(im, name):
         duration = 100
     save_transparent_gif(images=frames, save_file=file_path, durations=duration)
 
+
 def request_exception(request, exception):
     print("Problem: {}: {}".format(request.url, exception))
+
 
 def get_images(urls):
     results = multi_request(urls)
@@ -207,9 +218,11 @@ def get_images(urls):
         with open(get_path(urls[idx]), 'wb') as f:
             f.write(result.content)
 
+
 def multi_request(urls):
     results = greq.map((greq.get(u) for u in urls), exception_handler=request_exception, size=None)
     return results
+
 
 def download_image(url):
     print("Downloading image: " + url)

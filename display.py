@@ -192,8 +192,7 @@ class Ui(QtWidgets.QMainWindow):
         self.clear_emote_area()
         names = sorted(chat_emotes.keys(), key=lambda s: s.lower())
         cols = 8
-        x = 0
-        y = 0
+        x, y = 0, 0
         for name in names:
             movie = QMovie(images.get_path(chat_emotes[name]))
             label = QtWidgets.QLabel()

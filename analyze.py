@@ -14,7 +14,7 @@ import util
 
 def track_emotes(parsed, emotes, window_size, filters=None):
     # Dict of emotes with multiple string codes
-    #multi_emotes = {}
+    # multi_emotes = {}
     if filters is None:
         filters = []
     log_emotes_list = []
@@ -94,16 +94,16 @@ def track_emotes(parsed, emotes, window_size, filters=None):
         if len(message.split(" ")) == 1:
             for emote in log_emotes_list:
                 if emote in message:
-                        cleaned = message.replace(emote, "", 1)
-                        # Message contains more than a single emote - ignore
-                        if cleaned != "":
-                            continue
-                        window_data = util.add_value(emote, 1, window_data)
+                    cleaned = message.replace(emote, "", 1)
+                    # Message contains more than a single emote - ignore
+                    if cleaned != "":
+                        continue
+                    window_data = util.add_value(emote, 1, window_data)
 
     return times, None
 
-def plot_video_data(video_id, times, filters, limit=50, offset=10):
 
+def plot_video_data(video_id, times, filters, limit=50, offset=10):
     best_times = []
     best_labels = []
     best_values = []
@@ -151,12 +151,11 @@ def plot_video_data(video_id, times, filters, limit=50, offset=10):
     x = best_times
     y = best_values
 
-
     fig, ax = plt.subplots()
     scatter = ax.scatter(x, y, picker=True)
 
     fig.canvas.set_window_title("Chat Reactions Over Played Stream")
-    #fig.suptitle(video_title + "\nChannel:  " + channel)
+    # fig.suptitle(video_title + "\nChannel:  " + channel)
 
     filter_set = ""
     if filters:
@@ -173,8 +172,7 @@ def plot_video_data(video_id, times, filters, limit=50, offset=10):
     gca = plt.gca()
     gca.axes.get_xaxis().set_ticks([])
 
-
-    #TODO: Fix random "'PickEvent' object has no attribute 'ind'" error
+    # TODO: Fix random "'PickEvent' object has no attribute 'ind'" error
     def on_pick(event):
         try:
             ind = int(event.ind[0])
@@ -184,8 +182,8 @@ def plot_video_data(video_id, times, filters, limit=50, offset=10):
             link_secs = util.get_seconds(timestamp) - offset
             webbrowser.open(util.timestamp_url(video_id, link_secs), new=0, autoraise=True)
         except Exception as e:
-            #Ignore error for now... not breaking functionality
-            #print(e)
+            # Ignore error for now... not breaking functionality
+            # print(e)
             pass
 
     fig.canvas.mpl_connect('pick_event', on_pick)
@@ -193,6 +191,7 @@ def plot_video_data(video_id, times, filters, limit=50, offset=10):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         plt.show()
+
 
 def plot_dict(dict):
     items = dict.items()  # list of (K,V) tuples
