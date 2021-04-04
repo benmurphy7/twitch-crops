@@ -145,7 +145,7 @@ class Ui(QtWidgets.QMainWindow):
     def harvest(self):
         self.harvestBtn.setDisabled(True)
         self.harvestBtn.repaint()
-        filters = self.filterText.toPlainText().split()
+        filters = self.get_filter_list()
         if self.harvestBtn.text() == "Download":
             self.update_status("Downloading:")
             self.download_process()
@@ -167,6 +167,13 @@ class Ui(QtWidgets.QMainWindow):
                                         int(self.linkOffset.text()))
             else:
                 self.update_status("Error: ' {} ' is not a valid filter".format(invalid))
+
+    def get_filter_list(self):
+        filter_list = []
+        filters = self.filterText.toPlainText().split()
+        # Remove duplicates
+        [filter_list.append(x) for x in filters if x not in filter_list]
+        return filter_list
 
     def update_status(self, message):
         self.statusLabel.repaint()

@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import mplcursors
 import numpy as np
 from scipy.signal import find_peaks
+from textwrap import wrap
 
 import collect
 import util
@@ -19,9 +20,6 @@ def track_emotes(parsed, emotes, window_size, filters=None):
         filters = []
     log_emotes_list = []
     normal_emotes = []
-    filter_list = []
-    # Remove duplicates
-    [filter_list.append(x) for x in filters if x not in filter_list]
 
     """
     for emote in emotes:
@@ -34,8 +32,8 @@ def track_emotes(parsed, emotes, window_size, filters=None):
         normal_emotes.append(util.get_normal_name(emote))
 
     # Check for all emotes containing any words in filters
-    if filter_list:
-        for filter in filter_list:
+    if filters:
+        for filter in filters:
             valid = False
             for emote in normal_emotes:
                 if util.filter_match(filter, emote):
@@ -162,7 +160,7 @@ def plot_video_data(video_id, times, filters, limit=50, offset=10):
         filter_set = ", ".join([str(filter) for filter in filters])
     else:
         filter_set = "All emotes"
-    fig.suptitle("Top Reactions: " + filter_set)
+    fig.suptitle("\n".join(wrap("Top Reactions: " + filter_set)))
 
     # Show info when hovering cursor
     mplcursors.cursor(plt.gca().get_children(), hover=True).connect(
