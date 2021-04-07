@@ -32,19 +32,21 @@ def track_emotes(parsed, emotes, window_size, filters=None):
         normal_emotes.append(util.get_normal_name(emote))
 
     # Check for all emotes containing any words in filters
-    if filters:
-        for filter in filters:
-            valid = False
-            for emote in normal_emotes:
-                if util.filter_match(filter, emote):
-                    valid = True
-                    log_emotes_list.append(emote)
-                    break
-            if not valid:
-                return None, filter
+    try:
+        if filters:
+            for filter in filters:
+                valid = False
+                for emote in normal_emotes:
+                    if util.filter_match(filter, emote):
+                        valid = True
+                        log_emotes_list.append(emote)
+                if not valid:
+                    return None, None, filter
 
-    else:
-        log_emotes_list = emotes
+        else:
+            log_emotes_list = emotes
+    except Exception as e:
+        print(e)
 
     window_start = 0
     window_data = {}
@@ -98,7 +100,10 @@ def track_emotes(parsed, emotes, window_size, filters=None):
                         continue
                     window_data = util.add_value(emote, 1, window_data)
 
-    return times, None
+    if len(log_emotes_list) == len(emotes):
+        log_emotes_list = []
+
+    return times, log_emotes_list, None
 
 
 def plot_video_data(video_id, times, filters, limit=50, offset=10):
@@ -157,7 +162,13 @@ def plot_video_data(video_id, times, filters, limit=50, offset=10):
 
     filter_set = ""
     if filters:
-        filter_set = ", ".join([str(filter) for filter in filters])
+        max_filters = 5
+        if len(filters) > max_filters:
+            for x in range (0, max_filters):
+                filter_set += filters[x] + ", "
+            filter_set += "... +{} emotes".format(len(filters) - max_filters)
+        else:
+            filter_set = ", ".join([str(filter) for filter in filters])
     else:
         filter_set = "All emotes"
     fig.suptitle("\n".join(wrap("Top Reactions: " + filter_set)))

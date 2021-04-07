@@ -158,7 +158,7 @@ class Ui(QtWidgets.QMainWindow):
                 self.harvestBtn.repaint()
                 return
             self.update_status("Analyzing...")
-            data, invalid = log.parse_vod_log(self.video_id, self.chat_emotes, filters, int(self.windowSize.text()))
+            data, filters, invalid = log.parse_vod_log(self.video_id, self.chat_emotes, filters, int(self.windowSize.text()))
             self.harvestBtn.setDisabled(False)
             self.harvestBtn.repaint()
             if invalid is None:
