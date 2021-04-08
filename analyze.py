@@ -164,8 +164,8 @@ def plot_video_data(video_id, times, filters, limit=50, offset=10):
     if filters:
         max_filters = 5
         if len(filters) > max_filters:
-            for x in range (0, max_filters):
-                filter_set += filters[x] + ", "
+            for f in range (0, max_filters):
+                filter_set += filters[f] + ", "
             filter_set += "... +{} emotes".format(len(filters) - max_filters)
         else:
             filter_set = ", ".join([str(filter) for filter in filters])
