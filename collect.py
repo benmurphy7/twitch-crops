@@ -109,7 +109,6 @@ def get_available_emotes():
             for emoticon in sets[set]['emoticons']:
                 name = emoticon['name']
                 url_dict = emoticon['urls']
-                # Get highest resolution image available
                 url = "https:" + url_dict[list(url_dict)[0]]
                 ffz += add_emote(name, url)
     except:
@@ -133,32 +132,3 @@ def get_available_emotes():
     print("\nTTV: {}\nBTTV: {}\nFFZ: {}\n".format(ttv, bttv, ffz))
 
     return chat_emotes
-
-
-# TESTING
-
-
-"""
-Hook for grequest responses (use to track total progress of large batch)
-
-def request_fulfilled(r, *args, **kwargs):
-    track_requests.update()
-
-local_path = 'https://www.google.com/search?q={}'
-parameters = [('the+answer+to+life+the+universe+and+everything'), ('askew'), ('fun+facts')]
-    global track_requests # missing this line was the cause of my issue...
-    s = requests.Session()
-    s.hooks['response'].append(request_fulfilled) # assign hook here
-    retries = Retry(total=5, backoff_factor=0.2, status_forcelist=[500,502,503,504], raise_on_redirect=True, raise_on_status=True)
-    s.mount('http://', HTTPAdapter(max_retries=retries))
-    s.mount('https://', HTTPAdapter(max_retries=retries))
-    async_list = []
-    for parameters in parameter_list:
-        URL = local_path.format(*parameters)
-        async_list.append(grequests.get(URL, session=s))
-    track_requests = tqdm(total=len(async_list))
-    results = grequests.map(async_list)
-    track_requests.close()
-    track_requests = None
-
-"""

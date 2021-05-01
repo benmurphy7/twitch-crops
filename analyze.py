@@ -203,7 +203,7 @@ def plot_video_data(video_id, times, filters, limit=50, offset=10):
 
 
 def plot_dict(dict):
-    items = dict.items()  # list of (K,V) tuples
-    x, y = zip(*items)  # unpack tuples into x, y values
+    items = dict.items()
+    x, y = zip(*items)
     plt.plot(x, y)
     plt.show()

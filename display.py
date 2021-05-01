@@ -1,8 +1,7 @@
 import sys
-import time
 import warnings
 
-from PyQt5 import QtWidgets, uic, QtCore
+from PyQt5 import QtWidgets, uic
 from PyQt5.QtCore import Qt, QProcess
 from PyQt5.QtGui import QMovie
 
@@ -223,7 +222,7 @@ class Ui(QtWidgets.QMainWindow):
 
 
 def create_qt_window():
-    app = QtWidgets.QApplication(sys.argv)  # Create an instance of QtWidgets.QApplication
+    app = QtWidgets.QApplication(sys.argv)
     window = Ui()
     window.show()
     sys.exit(app.exec_())

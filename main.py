@@ -25,33 +25,12 @@ if __name__ == '__main__':
     collect.client = collect.initialize_client()
     display.create_qt_window()
 
-# TODO: Basic UI (Tkinter or webapp)
-# visual emote filtering
-# visualize stats
-# embedded video player for linking
+# TODO: Image download status
 
-# Enter VOD ID, show video/emote info, print download status
-# Display table of all available emotes (scrollable section) - ability to search for non-case-sensitive contains, also filter by source
-# Comma separated list of emotes (case sensitive), with words in quotes for contains
-# Display stats such as...
-# Largest reactions (per unique emote?)
-# Most commot reactions (most windows)
-# Total reactions per emote
-
-#TODO: Fix log sync bug causing comments to restart
-
-# TODO: Test continued log updates
-# TODO: Support truncating log file? (cleanup fragment cursors)
-
-# TODO: Reactions that last longer should be highlighted in some way?
-# Added configurable window size, but no current way to highlight dynamically
-
-# TODO: Improve importance filtering
-# Intensity score (higher peak) vs extended "chanting"
-# Filter out reactions to spoken emote name? Speech to text library - analyze audio clip before peak
+# TODO: Improve analysis
 
 # TODO: Show top-used emotes / stats
 
 # TODO: Association clustering (non k-means)
 
-# TODO: Improve log downloading?
+# TODO: Improve log downloading? - limited by Twitch API
