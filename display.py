@@ -99,7 +99,7 @@ class Ui(QtWidgets.QMainWindow):
             data = self.process.readAllStandardOutput()
             stdout = bytes(data).decode("utf8")
             if "%" in stdout:
-                self.update_status("Downloading {}: {}".format(self.process_id, stdout.split()[-1]))
+                self.update_status("Downloading log {}: {}".format(self.process_id, stdout.split()[-1]))
         except Exception as e:
             print(e)
 
@@ -149,7 +149,7 @@ class Ui(QtWidgets.QMainWindow):
         self.harvestBtn.repaint()
         filters = self.get_filter_list()
         if self.harvestBtn.text() == "Download":
-            self.update_status("Downloading {}...".format(self.video_id))
+            self.update_status("Downloading log {}...".format(self.video_id))
             self.download_process()
         elif self.harvestBtn.text() == "Sync":
             self.update_status("Syncing latest changes...")
@@ -160,7 +160,8 @@ class Ui(QtWidgets.QMainWindow):
                 self.harvestBtn.repaint()
                 return
             self.update_status("Analyzing...")
-            data, filters, invalid = log.parse_vod_log(self.video_id, self.chat_emotes, filters, int(self.windowSize.text()))
+            data, filters, invalid = log.parse_vod_log(self.video_id, self.chat_emotes, filters,
+                                                       int(self.windowSize.text()))
             self.harvestBtn.setDisabled(False)
             self.harvestBtn.repaint()
             if invalid is None:
@@ -224,7 +225,12 @@ class Ui(QtWidgets.QMainWindow):
                 y += 1
 
 
+window: Ui = None
+
+
 def create_qt_window():
+    global window
+
     app = QtWidgets.QApplication(sys.argv)
     window = Ui()
     window.show()

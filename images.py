@@ -3,11 +3,15 @@ import os
 
 import gevent.monkey
 
+import display
+
 gevent.monkey.patch_all()
 
 import grequests as greq
 
 import main
+
+batch_size, completed = 0, 0
 
 
 def get_image_hash(name):
@@ -42,6 +46,22 @@ def get_images(urls):
             f.write(result.content)
 
 
+def new_batch(size):
+    global batch_size
+    global completed
+    batch_size = size
+    completed = 0
+
+
+def result_status(r, *args, **kwargs):
+    global batch_size
+    global completed
+    completed += 1
+    display.window.update_status("Downloading images: {} / {}".format(completed, batch_size))
+
+
 def multi_request(urls):
-    results = greq.map((greq.get(u) for u in urls), exception_handler=request_exception, size=None)
+    new_batch(len(urls))
+    results = greq.map((greq.get(u, hooks=dict(response=result_status)) for u in urls),
+                       exception_handler=request_exception, size=None)
     return results
