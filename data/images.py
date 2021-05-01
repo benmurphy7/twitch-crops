@@ -56,7 +56,7 @@ def result_status(r, *args, **kwargs):
     global batch_size
     global completed
     completed += 1
-    display.window.update_status("Downloading images: {} / {}".format(completed, batch_size))
+    display.window.update_status("Downloading images: {}%".format(int(completed / batch_size * 100)))
 
 
 def multi_request(urls):
