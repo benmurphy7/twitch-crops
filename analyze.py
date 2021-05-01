@@ -2,14 +2,13 @@
 # Should track the prominent emote for each window
 import warnings
 import webbrowser
+from textwrap import wrap
 
 import matplotlib.pyplot as plt
 import mplcursors
 import numpy as np
 from scipy.signal import find_peaks
-from textwrap import wrap
 
-import collect
 import util
 
 
@@ -144,12 +143,10 @@ def plot_video_data(video_id, times, filters, limit=50, offset=10):
 
         for peak in peaks:
             time = keys[peak]
-            best_times.append(time)
-            best_labels.append(times[time][0])
-            best_values.append(times[time][1])
-
-        avg_val = sum(best_values) / len(best_values)
-        plt.axhline(y=avg_val, color='r', linestyle='-')
+            if times[time][0] != "null":
+                best_times.append(time)
+                best_labels.append(times[time][0])
+                best_values.append(times[time][1])
 
     x = best_times
     y = best_values
