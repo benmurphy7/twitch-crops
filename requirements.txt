@@ -7,3 +7,4 @@ PyQt5~=5.15.2
 gevent~=21.1.2
 grequests~=0.6.0
 exrex~=0.10.5
+twitch-python~=0.0.19
