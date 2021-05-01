@@ -1,20 +1,17 @@
 import os
 import sys
 
-import collect
-import display
-
-download_dir = "Downloads"
-images_dir = "Images"
-client_info = "clientInfo.txt"
+from data import collect
+from app import display
+from common import config
 
 
 def setup():
-    if not os.path.exists(client_info):
-        print("Error: clientInfo.txt not found")
+    if not os.path.exists(config.client_info):
+        print("Error: {} not found".format(config.client_info))
         sys.exit(0)
 
-    check_for_dirs = [images_dir, download_dir]
+    check_for_dirs = [config.images_dir, config.download_dir]
     for dir in check_for_dirs:
         if not os.path.exists(dir):
             os.makedirs(dir)
@@ -25,7 +22,7 @@ if __name__ == '__main__':
     collect.client = collect.initialize_client()
     display.create_qt_window()
 
-# TODO: Image download status
+# TODO: Cross-platform UI consistency
 
 # TODO: Improve analysis
 
