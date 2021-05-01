@@ -99,7 +99,7 @@ class Ui(QtWidgets.QMainWindow):
             data = self.process.readAllStandardOutput()
             stdout = bytes(data).decode("utf8")
             if "%" in stdout:
-                self.update_status("Downloading: " + stdout.split()[-1])
+                self.update_status("Downloading {}: {}".format(self.process_id, stdout.split()[-1]))
         except Exception as e:
             print(e)
 
@@ -115,7 +115,10 @@ class Ui(QtWidgets.QMainWindow):
         self.process = None
         self.harvestBtn.setDisabled(False)
         self.set_harvest_text(self.video_id)
-        self.update_status("Downloaded video: " + self.process_id)
+        status = "Download complete: "
+        if not log.chat_log_exists(self.process_id):
+            status = "Chat data currently unavailable: "
+        self.update_status(status + self.process_id)
 
     def enable_download(self, text):
         self.harvestBtn.setText(text)
@@ -146,7 +149,7 @@ class Ui(QtWidgets.QMainWindow):
         self.harvestBtn.repaint()
         filters = self.get_filter_list()
         if self.harvestBtn.text() == "Download":
-            self.update_status("Downloading:")
+            self.update_status("Downloading {}...".format(self.video_id))
             self.download_process()
         elif self.harvestBtn.text() == "Sync":
             self.update_status("Syncing latest changes...")
