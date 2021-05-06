@@ -1,5 +1,4 @@
 import sys
-import warnings
 
 from PyQt5 import QtWidgets, uic
 from PyQt5.QtCore import Qt, QProcess
@@ -207,10 +206,10 @@ class Ui(QtWidgets.QMainWindow):
             label = QtWidgets.QLabel()
             label.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
             label.setMovie(movie)
-            # Ignore isn't working...
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                movie.start()
+
+            # TODO: Silence libpng warning, or remove incorrect sRGB profiles
+            movie.start()
+
             text = QtWidgets.QLabel()
             text.setText(util.get_normal_name(name))
             text.setTextInteractionFlags(Qt.TextSelectableByMouse)
@@ -226,6 +225,7 @@ class Ui(QtWidgets.QMainWindow):
 
 window: Ui = None
 app: QApplication = None
+
 
 def create_qt_window():
     global window

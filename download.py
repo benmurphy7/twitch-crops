@@ -6,7 +6,7 @@ import main
 
 def download(video_id):
     if collect.update_video_info(video_id):
-        if logs.cursor_update(video_id):
+        if not logs.chat_log_exists(video_id) or logs.cursor_update(video_id):
             logs.download_log()
         else:
             print("Existing log is complete.")
