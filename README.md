@@ -26,10 +26,10 @@ Run with ```python main.py```
 
 ## Using the UI:
 
-Enter a stream video ID which will update the available emotes for that channel, and add optional filters.
+Enter a stream video ID which will update the available emotes for that channel.
 
 
-Provide filters as a space-separated list of emote names. Use quotes for contains search.  
+Provide optional filters as a space-separated list of emote names. Use quotes for contains search.  
 ```Ex: "LUL" KEK = LUL, LULW, ... , KEK```
 
 The resulting plot will show points which can be clicked to play the video from the timestamp (with a slight introduction)  
