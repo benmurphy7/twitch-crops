@@ -6,7 +6,10 @@ import main
 
 def download(video_id):
     if collect.update_video_info(video_id):
-        logs.download_log()
+        if logs.cursor_update(video_id):
+            logs.download_log()
+        else:
+            print("Existing log is complete.")
     else:
         print("Invalid VOD ID")
 
