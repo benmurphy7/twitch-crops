@@ -77,7 +77,7 @@ class Ui(QtWidgets.QMainWindow):
                 self.process.readyReadStandardOutput.connect(self.handle_stdout)
                 self.process.readyReadStandardError.connect(self.handle_stderr)
                 self.process.stateChanged.connect(self.handle_state)
-                self.process.finished.connect(self.process_finished)  # Clean up once complete.
+                self.process.finished.connect(self.process_finished)
                 self.process.start(sys.executable, [config.download_script, self.video_id])
                 self.set_harvest_text(self.video_id)
         except Exception as e:
@@ -97,7 +97,7 @@ class Ui(QtWidgets.QMainWindow):
             data = self.process.readAllStandardOutput()
             stdout = bytes(data).decode("utf8")
             if "%" in stdout:
-                self.update_status("Downloading log {}: {}".format(self.process_id, stdout.split()[-1]))
+                self.update_status("Downloading log {} : {}".format(self.process_id, stdout.split()[-1]))
         except Exception as e:
             print(e)
 

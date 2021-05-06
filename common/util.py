@@ -86,7 +86,7 @@ def is_new_max(list, value):
 
 
 def filter_match(filter, string):
-    if filter[0] == "\"":
+    if "\"" in filter:
         if filter.replace("\"", "") in string:
             return True
     elif filter == string:

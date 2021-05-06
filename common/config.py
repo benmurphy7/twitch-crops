@@ -8,6 +8,6 @@ images_dir = os.path.join(resource_dir, 'images')
 
 ui_template = os.path.join(resource_dir, 'BasicForm.ui')
 
-download_script = os.path.join('scripts', 'download.py')
+download_script = "download.py"
 
 client_info = 'clientInfo.txt'

@@ -137,6 +137,7 @@ def format_comment(comment):
 def download_progress(comment):
     current = float(comment['content_offset_seconds'])
     end = util.link_time_to_seconds(collect.video_info.duration)
+    sys.stdout.flush()
     sys.stdout.write('[{}] {}%\r'.format("Downloading", '%.2f' % min(current * 10 / end * 10, 100.00)))
 
 

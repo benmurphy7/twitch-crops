@@ -151,8 +151,9 @@ def plot_video_data(video_id, times, filters, limit=50, offset=10):
     x = best_times
     y = best_values
 
+    plt.ion()
     fig, ax = plt.subplots()
-    scatter = ax.scatter(x, y, picker=True)
+    ax.scatter(x, y, picker=True)
 
     fig.canvas.set_window_title("Chat Reactions Over Played Stream")
     # fig.suptitle(video_title + "\nChannel:  " + channel)
