@@ -372,7 +372,7 @@
        <item row="1" column="0">
         <layout class="QHBoxLayout" name="horizontalLayout_4">
          <property name="spacing">
-          <number>10</number>
+          <number>5</number>
          </property>
          <property name="sizeConstraint">
           <enum>QLayout::SetDefaultConstraint</enum>
@@ -384,41 +384,51 @@
           <number>0</number>
          </property>
          <item>
-          <widget class="QLabel" name="label_2">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
+          <layout class="QHBoxLayout" name="horizontalLayout_3">
+           <property name="leftMargin">
+            <number>5</number>
            </property>
-           <property name="text">
-            <string>Filters:</string>
+           <property name="rightMargin">
+            <number>5</number>
            </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPlainTextEdit" name="filterText">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>220</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="font">
-            <font>
-             <pointsize>10</pointsize>
-            </font>
-           </property>
-           <property name="plainText">
-            <string/>
-           </property>
-          </widget>
+           <item>
+            <widget class="QLabel" name="label_2">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>Filters:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPlainTextEdit" name="filterText">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>220</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="font">
+              <font>
+               <pointsize>10</pointsize>
+              </font>
+             </property>
+             <property name="plainText">
+              <string/>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
          <item>
           <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -426,7 +436,10 @@
             <number>2</number>
            </property>
            <property name="leftMargin">
-            <number>15</number>
+            <number>5</number>
+           </property>
+           <property name="rightMargin">
+            <number>5</number>
            </property>
            <item>
             <layout class="QGridLayout" name="gridLayout_2">
@@ -767,7 +780,7 @@
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_2">
            <property name="leftMargin">
-            <number>30</number>
+            <number>20</number>
            </property>
            <property name="rightMargin">
             <number>20</number>
@@ -800,7 +813,7 @@
            </property>
            <property name="sizeHint" stdset="0">
             <size>
-             <width>250</width>
+             <width>200</width>
              <height>20</height>
             </size>
            </property>
@@ -866,8 +879,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>846</width>
-            <height>512</height>
+            <width>843</width>
+            <height>509</height>
            </rect>
           </property>
           <property name="sizePolicy">
@@ -1503,7 +1516,7 @@
      <x>0</x>
      <y>0</y>
      <width>900</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
   </widget>

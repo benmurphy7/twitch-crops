@@ -146,7 +146,7 @@ class Ui(QtWidgets.QMainWindow):
         self.harvestBtn.repaint()
         filters = self.get_filter_list()
         if self.harvestBtn.text() == "Download":
-            self.update_status("Downloading [{}]...".format(self.video_id))
+            self.update_status("Downloading [{}] ...".format(self.video_id))
             self.download_process()
         elif self.harvestBtn.text() == "Sync":
             self.update_status("Syncing latest changes...")
