@@ -24,10 +24,12 @@ class Ui(QtWidgets.QMainWindow):
         self.search_timer.setSingleShot(True)
         self.search_timer.timeout.connect(self.display_emotes)
 
+        self.centralWidget().layout().setAlignment(Qt.AlignTop)
         self.updateBtn.clicked.connect(self.update_stream_info)
         self.harvestBtn.clicked.connect(self.harvest)
         self.emoteSearch.textChanged.connect(self.set_search_timer)
         self.statusLabel.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.emotesFrame.hide()
 
     def disable_button(self, button):
         button.setDisabled(False)
@@ -233,6 +235,8 @@ class Ui(QtWidgets.QMainWindow):
                 if x >= cols:
                     x = 0
                     y += 1
+
+        self.emotesFrame.show()
 
 
 window: Ui = None
