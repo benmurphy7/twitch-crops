@@ -18,7 +18,6 @@ def track_emotes(parsed, emotes, window_size, filters=None):
     if filters is None:
         filters = []
     log_emotes_list = []
-    normal_emotes = []
 
     """
     for emote in emotes:
@@ -27,15 +26,12 @@ def track_emotes(parsed, emotes, window_size, filters=None):
             multi_emotes[emote] = names
     """
 
-    for emote in emotes:
-        normal_emotes.append(util.get_normal_name(emote))
-
     # Check for all emotes containing any words in filters
     try:
         if filters:
             for filter in filters:
                 valid = False
-                for emote in normal_emotes:
+                for emote in emotes:
                     if util.filter_match(filter, emote):
                         valid = True
                         log_emotes_list.append(emote)

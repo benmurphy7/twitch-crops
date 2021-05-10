@@ -13,14 +13,15 @@ class Ui(QtWidgets.QMainWindow):
     def __init__(self):
         super(Ui, self).__init__()
         uic.loadUi(config.ui_template, self)
-        self.updateBtn.clicked.connect(self.update_stream_info)
-        self.harvestBtn.clicked.connect(self.harvest)
-        self.statusLabel.setTextInteractionFlags(Qt.TextSelectableByMouse)
         self.video_id = ""
         self.chat_emotes = {}
         self.clear_emote_area()
         self.process = None
         self.process_id = ""
+        self.updateBtn.clicked.connect(self.update_stream_info)
+        self.harvestBtn.clicked.connect(self.harvest)
+        self.emoteSearch.textChanged.connect(lambda: self.display_emotes(self.chat_emotes))
+        self.statusLabel.setTextInteractionFlags(Qt.TextSelectableByMouse)
 
     def disable_button(self, button):
         button.setDisabled(False)
@@ -35,6 +36,7 @@ class Ui(QtWidgets.QMainWindow):
         self.updateBtn.setDisabled(True)
         self.updateBtn.repaint()
         video_id = self.vodEntry.text()
+        self.emoteSearch.setText("")
         if not video_id or not collect.update_video_info(video_id):
             self.invalid_id()
             return
@@ -202,25 +204,26 @@ class Ui(QtWidgets.QMainWindow):
         cols = 8
         x, y = 0, 0
         for name in names:
-            movie = QMovie(images.get_path(chat_emotes[name]))
-            label = QtWidgets.QLabel()
-            label.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-            label.setMovie(movie)
+            if self.emoteSearch.text().lower() in name.lower():
+                movie = QMovie(images.get_path(chat_emotes[name]))
+                gif = QtWidgets.QLabel()
+                gif.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+                gif.setMovie(movie)
 
-            # TODO: Silence libpng warning, or remove incorrect sRGB profiles
-            movie.start()
+                # TODO: Silence libpng warning, or remove incorrect sRGB profiles
+                movie.start()
 
-            text = QtWidgets.QLabel()
-            text.setText(util.get_normal_name(name))
-            text.setTextInteractionFlags(Qt.TextSelectableByMouse)
+                text = QtWidgets.QLabel()
+                text.setText(name)
+                text.setTextInteractionFlags(Qt.TextSelectableByMouse)
 
-            emote_area.addWidget(label, y, x)
-            emote_area.addWidget(text, y, x + 1)
+                emote_area.addWidget(gif, y, x)
+                emote_area.addWidget(text, y, x + 1)
 
-            x += 2
-            if x >= cols:
-                x = 0
-                y += 1
+                x += 2
+                if x >= cols:
+                    x = 0
+                    y += 1
 
 
 window: Ui = None
