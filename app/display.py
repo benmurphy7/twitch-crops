@@ -96,7 +96,7 @@ class Ui(QtWidgets.QMainWindow):
             data = self.process.readAllStandardOutput()
             stdout = bytes(data).decode("utf8")
             if "%" in stdout:
-                self.update_status("Downloading log {} : {}".format(self.process_id, stdout.split()[-1]))
+                self.update_status("Downloading [{}] - {}".format(self.process_id, stdout.split()[-1]))
         except Exception as e:
             print(e)
 
@@ -146,7 +146,7 @@ class Ui(QtWidgets.QMainWindow):
         self.harvestBtn.repaint()
         filters = self.get_filter_list()
         if self.harvestBtn.text() == "Download":
-            self.update_status("Downloading log {}...".format(self.video_id))
+            self.update_status("Downloading [{}] ...".format(self.video_id))
             self.download_process()
         elif self.harvestBtn.text() == "Sync":
             self.update_status("Syncing latest changes...")
