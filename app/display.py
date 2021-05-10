@@ -1,7 +1,7 @@
 import sys
 
 from PyQt5 import QtWidgets, uic
-from PyQt5.QtCore import Qt, QProcess
+from PyQt5.QtCore import Qt, QProcess, QTimer
 from PyQt5.QtGui import QMovie
 from PyQt5.QtWidgets import QApplication
 
@@ -18,9 +18,15 @@ class Ui(QtWidgets.QMainWindow):
         self.clear_emote_area()
         self.process = None
         self.process_id = ""
+
+        self.search_timer = QTimer()
+        self.search_timer_length = 0
+        self.search_timer.setSingleShot(True)
+        self.search_timer.timeout.connect(self.display_emotes)
+
         self.updateBtn.clicked.connect(self.update_stream_info)
         self.harvestBtn.clicked.connect(self.harvest)
-        self.emoteSearch.textChanged.connect(lambda: self.display_emotes(self.chat_emotes))
+        self.emoteSearch.textChanged.connect(self.set_search_timer)
         self.statusLabel.setTextInteractionFlags(Qt.TextSelectableByMouse)
 
     def disable_button(self, button):
@@ -64,7 +70,7 @@ class Ui(QtWidgets.QMainWindow):
             except Exception as e:
                 print(e)
 
-            self.display_emotes(chat_emotes)
+            self.display_emotes()
             self.update_status("")
 
         self.set_harvest_text(self.video_id)
@@ -177,6 +183,9 @@ class Ui(QtWidgets.QMainWindow):
         [filter_list.append(x) for x in filters if x not in filter_list]
         return filter_list
 
+    def set_search_timer(self):
+        self.search_timer.start(self.search_timer_length)
+
     def update_status(self, message):
         self.statusLabel.repaint()
         self.statusLabel.setText(message)
@@ -197,15 +206,15 @@ class Ui(QtWidgets.QMainWindow):
 
         self.scrollAreaWidgetContents.repaint()
 
-    def display_emotes(self, chat_emotes):
+    def display_emotes(self):
         emote_area = self.scrollAreaWidgetContents.layout()
         self.clear_emote_area()
-        names = sorted(chat_emotes.keys(), key=lambda s: s.lower())
+        names = sorted(self.chat_emotes.keys(), key=lambda s: s.lower())
         cols = 8
         x, y = 0, 0
         for name in names:
             if self.emoteSearch.text().lower() in name.lower():
-                movie = QMovie(images.get_path(chat_emotes[name]))
+                movie = QMovie(images.get_path(self.chat_emotes[name]))
                 gif = QtWidgets.QLabel()
                 gif.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
                 gif.setMovie(movie)
