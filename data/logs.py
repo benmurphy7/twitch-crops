@@ -1,7 +1,9 @@
+import ntpath
 import os
 import sys
 from datetime import timedelta
 from os import path
+from pathlib import Path
 
 from data import analyze, collect
 from common import util, config
@@ -14,6 +16,16 @@ def get_log_path(video_id):
 def chat_log_exists(video_id):
     log_path = get_log_path(video_id)
     return path.exists(log_path) and os.stat(log_path).st_size > 0
+
+
+def get_existing_logs():
+    log_list = []
+    for file in sorted(Path(config.download_dir).iterdir(), key=os.path.getmtime, reverse=True):
+        filename = ntpath.basename(file)
+        if filename.endswith(".log"):
+            log_list.append(filename)
+    return log_list
+
 
 
 def parse_log(log_path):
