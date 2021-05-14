@@ -18,6 +18,7 @@ class Ui(QtWidgets.QMainWindow):
         self.clear_emote_area()
         self.process = None
         self.process_id = ""
+        self.update_id = False
 
         self.search_timer = QTimer()
         self.search_timer_length = 0
@@ -28,6 +29,7 @@ class Ui(QtWidgets.QMainWindow):
         self.harvestBtn.clicked.connect(self.harvest)
         self.emoteSearch.textChanged.connect(self.set_search_timer)
         self.statusLabel.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.update_ids()
 
     def disable_button(self, button):
         button.setDisabled(False)
@@ -41,7 +43,7 @@ class Ui(QtWidgets.QMainWindow):
     def update_stream_info(self):
         self.updateBtn.setDisabled(True)
         self.updateBtn.repaint()
-        video_id = self.vodEntry.text()
+        video_id = self.vodEntry.currentText()
         self.emoteSearch.setText("")
         if not video_id or not collect.update_video_info(video_id):
             self.invalid_id()
@@ -87,6 +89,7 @@ class Ui(QtWidgets.QMainWindow):
                 self.process.finished.connect(self.process_finished)
                 self.process.start(sys.executable, [config.download_script, self.video_id])
                 self.set_harvest_text(self.video_id)
+                self.update_id = True
         except Exception as e:
             print(e)
 
@@ -105,6 +108,10 @@ class Ui(QtWidgets.QMainWindow):
             stdout = bytes(data).decode("utf8")
             if "%" in stdout:
                 self.update_status("Downloading [{}] - {}".format(self.process_id, stdout.split()[-1]))
+                if self.update_id:
+                    self.update_ids()
+                    self.update_id = False
+
         except Exception as e:
             print(e)
 
@@ -131,6 +138,10 @@ class Ui(QtWidgets.QMainWindow):
 
     def is_downloading(self, video_id):
         return self.process is not None and self.process_id == video_id
+
+    def update_ids(self):
+        self.vodEntry.clear()
+        self.vodEntry.addItems([s.strip(".log") for s in logs.get_existing_logs()])
 
     def set_harvest_text(self, video_id):
         try:
