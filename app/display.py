@@ -3,7 +3,7 @@ import sys
 from PyQt5 import QtWidgets, uic
 from PyQt5.QtCore import Qt, QProcess, QTimer
 from PyQt5.QtGui import QMovie
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication, QVBoxLayout, QFrame
 
 from common import util, config
 from data import analyze, collect, images, logs
@@ -221,26 +221,35 @@ class Ui(QtWidgets.QMainWindow):
         emote_area = self.scrollAreaWidgetContents.layout()
         self.clear_emote_area()
         names = sorted(self.chat_emotes.keys(), key=lambda s: s.lower())
-        cols = 8
+        cols = 4
         x, y = 0, 0
         for name in names:
             if self.emoteSearch.text().lower() in name.lower():
+
+                vbox = QVBoxLayout()
+                vbox.setAlignment(Qt.AlignCenter)
+                frame = QFrame()
+                frame.setLayout(vbox)
+
                 movie = QMovie(images.get_path(self.chat_emotes[name]))
                 gif = QtWidgets.QLabel()
-                gif.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+                gif.setAlignment(Qt.AlignHCenter)
                 gif.setMovie(movie)
 
                 # TODO: Silence libpng warning, or remove incorrect sRGB profiles
                 movie.start()
 
                 text = QtWidgets.QLabel()
+                text.setAlignment(Qt.AlignHCenter)
                 text.setText(name)
                 text.setTextInteractionFlags(Qt.TextSelectableByMouse)
 
-                emote_area.addWidget(gif, y, x)
-                emote_area.addWidget(text, y, x + 1)
+                vbox.addWidget(gif)
+                vbox.addWidget(text)
 
-                x += 2
+                emote_area.addWidget(frame, y, x)
+
+                x += 1
                 if x >= cols:
                     x = 0
                     y += 1

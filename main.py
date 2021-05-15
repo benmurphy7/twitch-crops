@@ -22,8 +22,6 @@ if __name__ == '__main__':
     collect.client = collect.initialize_client()
     display.create_qt_window()
 
-# TODO: Existing VOD combo selection
-
 # TODO: Improve analysis
 
 # TODO: Show top-used emotes / stats
