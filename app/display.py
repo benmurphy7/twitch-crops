@@ -29,6 +29,7 @@ class Ui(QtWidgets.QMainWindow):
         self.harvestBtn.clicked.connect(self.harvest)
         self.emoteSearch.textChanged.connect(self.set_search_timer)
         self.statusLabel.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.vodEntry.activated.connect(self.update_stream_info)
         self.update_ids()
 
     def disable_button(self, button):
