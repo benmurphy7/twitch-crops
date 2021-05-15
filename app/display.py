@@ -1,15 +1,15 @@
 import sys
 
-from PyQt5 import QtWidgets, uic
+from PyQt5 import uic
 from PyQt5.QtCore import Qt, QProcess, QTimer
 from PyQt5.QtGui import QMovie
-from PyQt5.QtWidgets import QApplication, QVBoxLayout, QFrame
+from PyQt5.QtWidgets import QApplication, QVBoxLayout, QFrame, QLabel, QMainWindow
 
 from common import util, config
 from data import analyze, collect, images, logs
 
 
-class Ui(QtWidgets.QMainWindow):
+class Ui(QMainWindow):
     def __init__(self):
         super(Ui, self).__init__()
         uic.loadUi(config.ui_template, self)
@@ -178,13 +178,13 @@ class Ui(QtWidgets.QMainWindow):
                 self.harvestBtn.repaint()
                 return
             self.update_status("Analyzing...")
-            data, filters, invalid = logs.parse_vod_log(self.video_id, self.chat_emotes, filters,
+            data, valid, invalid = logs.parse_vod_log(self.video_id, self.chat_emotes, filters,
                                                         int(self.windowSize.text()))
             self.harvestBtn.setDisabled(False)
             self.harvestBtn.repaint()
             if invalid is None:
                 self.update_status("")
-                analyze.plot_video_data(self.video_id, data, filters, int(self.showMax.text()),
+                analyze.plot_video_data(self.video_id, data, valid, int(self.showMax.text()),
                                         int(self.linkOffset.text()))
             else:
                 self.update_status("Error: ' {} ' is not a valid filter".format(invalid))
@@ -234,14 +234,14 @@ class Ui(QtWidgets.QMainWindow):
                 frame.setLayout(vbox)
 
                 movie = QMovie(images.get_path(self.chat_emotes[name]))
-                gif = QtWidgets.QLabel()
+                gif = QLabel()
                 gif.setAlignment(Qt.AlignHCenter)
                 gif.setMovie(movie)
 
                 # TODO: Silence libpng warning, or remove incorrect sRGB profiles
                 movie.start()
 
-                text = QtWidgets.QLabel()
+                text = QLabel()
                 text.setAlignment(Qt.AlignHCenter)
                 text.setText(name)
                 text.setTextInteractionFlags(Qt.TextSelectableByMouse)
@@ -265,7 +265,7 @@ def create_qt_window():
     global window
     global app
 
-    app = QtWidgets.QApplication(sys.argv)
+    app = QApplication(sys.argv)
     window = Ui()
     window.show()
     sys.exit(app.exec_())

@@ -64,7 +64,6 @@ def add_value(k, v, d):
         d[k] += v
     else:
         d[k] = v
-    return d
 
 
 def space_timestamp(timestamp):

@@ -1,5 +1,3 @@
-# Returning (timestamp, count) for each window. Count is just highest count of any emote.
-# Should track the prominent emote for each window
 import warnings
 import webbrowser
 from textwrap import wrap
@@ -13,18 +11,10 @@ from common import util
 
 
 def track_emotes(parsed, emotes, window_size, filters=None):
-    # Dict of emotes with multiple string codes
-    # multi_emotes = {}
+
     if filters is None:
         filters = []
     log_emotes_list = []
-
-    """
-    for emote in emotes:
-        names = collect.get_normal_names(emote)
-        if len(names) > 1:
-            multi_emotes[emote] = names
-    """
 
     # Check for all emotes containing any words in filters
     try:
@@ -93,7 +83,7 @@ def track_emotes(parsed, emotes, window_size, filters=None):
                     # Message contains more than a single emote - ignore
                     if cleaned != "":
                         continue
-                    window_data = util.add_value(emote, 1, window_data)
+                    util.add_value(emote, 1, window_data)
 
     if len(log_emotes_list) == len(emotes):
         log_emotes_list = []
@@ -169,7 +159,7 @@ def plot_video_data(video_id, times, filters, limit=50, offset=10):
 
     # Show info when hovering cursor
     mplcursors.cursor(plt.gca().get_children(), hover=True).connect(
-        "add", lambda sel: sel.annotation.set_text(  # Issue hovering over line
+        "add", lambda sel: sel.annotation.set_text(
             best_times[sel.target.index] + "\n" + best_labels[sel.target.index]))
 
     gca = plt.gca()
