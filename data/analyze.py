@@ -134,8 +134,8 @@ def plot_video_data(video_id, times, filters, limit=50, offset=10):
             labels.append(value[0])
             values.append(value[1])
 
-        x = np.array(values)
-        peaks, _ = find_peaks(x, prominence=1)  # 12-13 is best, need to test on other logs
+        x_cords = np.array(values)
+        peaks, _ = find_peaks(x_cords, prominence=1)  # 12-13 is best, need to test on other logs
 
         for peak in peaks:
             time = keys[peak]
@@ -144,12 +144,20 @@ def plot_video_data(video_id, times, filters, limit=50, offset=10):
                 best_labels.append(times[time][0])
                 best_values.append(times[time][1])
 
-    x = best_times
-    y = best_values
+    x_cords = best_times
+    y_cords = best_values
 
     plt.ion()
     fig, ax = plt.subplots()
-    ax.scatter(x, y, picker=True)
+    labels = get_names(x_cords, best_labels)
+    colors = get_colors(x_cords, best_labels, 'gist_rainbow')
+
+    #for x, y, c, l in zip(x_cords, y_cords, colors, labels):
+    #    plt.scatter(x, y, color=c, label=l, picker=True)
+    #for i, (name, color) in enumerate(zip(names, colors), 1):
+    #    plt.scatter(x, y, label=name, color=color, picker=True)
+    plt.scatter(x_cords, y_cords, c=colors, picker=True)
+    #plt.legend()
 
     fig.canvas.set_window_title("Chat Reactions Over Played Stream")
     # fig.suptitle(video_title + "\nChannel:  " + channel)
@@ -179,9 +187,9 @@ def plot_video_data(video_id, times, filters, limit=50, offset=10):
     def on_pick(event):
         try:
             ind = int(event.ind[0])
-            plt.plot(x[ind], y[ind], 'ro')
+            plt.plot(x_cords[ind], y_cords[ind], 'ko')
             fig.canvas.draw()
-            timestamp = x[ind]
+            timestamp = x_cords[ind]
             link_secs = util.get_seconds(timestamp) - offset
             webbrowser.open(util.timestamp_url(video_id, link_secs), new=0, autoraise=True)
         except Exception as e:
@@ -195,6 +203,23 @@ def plot_video_data(video_id, times, filters, limit=50, offset=10):
         warnings.simplefilter("ignore")
         plt.show()
 
+
+def get_names(x_vals, labels):
+    names = []
+    for i in range(0, len(x_vals)):
+        name = labels[i]
+        if not name in names:
+            names.append(name)
+    print("NAMES: " + str(names))
+    return names
+
+
+def get_colors(x_vals, labels, cmap_type):
+    cmap = plt.get_cmap(cmap_type)
+    names = get_names(x_vals, labels)
+    color_list = cmap(np.linspace(0, 1, len(names)))
+    color_dict = {names[i]: color_list[i] for i in range(len(names))}
+    return [color_dict[n] for n in [labels[i] for i in range(len(x_vals))]]
 
 def plot_dict(dict):
     items = dict.items()
