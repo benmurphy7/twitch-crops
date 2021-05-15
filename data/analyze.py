@@ -38,23 +38,29 @@ def track_emotes(parsed, emotes, window_size, filters=None):
     times = {}
 
     # Merging repeated windows
-    first_timestamp = ""
+    first_timestamp = util.to_timestamp(0)
     prev_emote = ""
     top_counts = []
 
-    for set in parsed:
-        timestamp = set[0]
-        user = set[1]
-        message = set[2]
+    for comment in parsed:
+        timestamp = comment[0]
+        user = comment[1]
+        message = comment[2]
         rounded_time = util.round_down(util.get_seconds(timestamp), window_size)
 
         # Start of new window
         if rounded_time > window_start:
             # Get max from ending window
-            top_pair = util.max_value_pair(window_data)
-            window_timestamp = util.to_timestamp(rounded_time)
+            top_item = util.top_item(window_data)
+            window_timestamp = top_item[1][1]
+
+            if not window_timestamp:
+                window_timestamp = util.to_timestamp(rounded_time)
+
+            top_pair = (top_item[0], top_item[1][0])
             top_emote = top_pair[0]
             top_count = top_pair[1]
+
 
             # Check for repeated windows and merge
             if top_emote is prev_emote:
@@ -83,7 +89,7 @@ def track_emotes(parsed, emotes, window_size, filters=None):
                     # Message contains more than a single emote - ignore
                     if cleaned != "":
                         continue
-                    util.add_value(emote, 1, window_data)
+                    util.add_value(window_data, emote, 1, timestamp)
 
     if len(log_emotes_list) == len(emotes):
         log_emotes_list = []

@@ -52,18 +52,18 @@ def round_down(num, divisor):
     return num - (num % divisor)
 
 
-def max_value_pair(x):
+def top_item(x):
     sorted_x = sorted(x.items(), key=lambda item: item[1], reverse=True)
     if not sorted_x:
-        return "null", -1
+        return "null", (-1, "")
     return sorted_x[0]
 
 
-def add_value(k, v, d):
+def add_value(d, k, v0, v1):
     if k in d:
-        d[k] += v
+        d[k] = (d[k][0] + v0, d[k][1])
     else:
-        d[k] = v
+        d[k] = (v0, v1)
 
 
 def space_timestamp(timestamp):
