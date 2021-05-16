@@ -5,13 +5,14 @@ from textwrap import wrap
 import matplotlib.pyplot as plt
 import mplcursors
 import numpy as np
+import twitch
+from matplotlib.backend_bases import PickEvent
 from scipy.signal import find_peaks
 
 from common import util
 
 
 def track_emotes(parsed, emotes, window_size, filters=None):
-
     if filters is None:
         filters = []
     log_emotes_list = []
@@ -35,10 +36,10 @@ def track_emotes(parsed, emotes, window_size, filters=None):
 
     window_start = 0
     window_data = {}
-    times = {}
+    activity = {}
+    message_count = 0
 
     # Merging repeated windows
-    first_timestamp = util.to_timestamp(0)
     prev_emote = ""
     top_counts = []
 
@@ -52,34 +53,35 @@ def track_emotes(parsed, emotes, window_size, filters=None):
         if rounded_time > window_start:
             # Get max from ending window
             top_item = util.top_item(window_data)
-            window_timestamp = top_item[1][1]
-
-            if not window_timestamp:
-                window_timestamp = util.to_timestamp(rounded_time)
+            first_emote_timestamp = top_item[1][1]
+            first_message_timestamp = timestamp
 
             top_pair = (top_item[0], top_item[1][0])
             top_emote = top_pair[0]
             top_count = top_pair[1]
-
 
             # Check for repeated windows and merge
             if top_emote is prev_emote:
                 if util.is_new_max(top_counts, top_count):
                     top_counts.append(top_count)
                     # Move max to first timestamp
-                    times[first_timestamp] = (top_emote, top_count)
+                    activity_data = activity[first_window_timestamp]
+                    new_activity_data = ((top_emote, top_count), activity_data[1])
+                    activity[first_window_timestamp] = new_activity_data
                 # Flatten repeated window
                 top_pair = (top_emote, 1)
 
             else:
                 top_counts = []
-                first_timestamp = window_timestamp
-                times[window_timestamp] = top_pair
+                first_window_timestamp = first_emote_timestamp
 
-            times[window_timestamp] = top_pair
+            activity[first_emote_timestamp] = (top_pair, (first_message_timestamp, message_count))
+            message_count = 0
             prev_emote = top_emote
             window_start = rounded_time
             window_data = {}
+
+        message_count += 1
 
         # Ignore lines with multiple emote instances (Generally spam, reactions are single emotes)
         if len(message.split(" ")) == 1:
@@ -94,20 +96,31 @@ def track_emotes(parsed, emotes, window_size, filters=None):
     if len(log_emotes_list) == len(emotes):
         log_emotes_list = []
 
-    return times, log_emotes_list, None
+    return activity, log_emotes_list, None
 
 
-def plot_video_data(video_id, times, filters, limit=50, offset=10):
+def plot_video_data(video_info: twitch.helix.Video, activity, filters, limit=50, offset=10):
     best_times = []
     best_labels = []
     best_values = []
 
+    # Message Activity
+
+    messages_x = []
+    messages_y = []
+
+    for time in activity:
+        messages_x.append(activity[time][1][0])
+        messages_y.append(activity[time][1][1])
+
+    # Emote Reactions
+
     # Show only top x results
     if limit > 0:
-        # [(k,(l,v))]
-        sorted_items = sorted(list(times.items()), key=lambda x: x[1][1], reverse=True)
+        # item : (first_emote_timestamp, (label, value), (window_timestamp, message_count))]
+        sorted_items = sorted(list(activity.items()), key=lambda x: x[1][1][1], reverse=True)
         for index, item in zip(range(limit), sorted_items):
-            emote = sorted_items[index][1][0]
+            emote = sorted_items[index][1][1][0]
             if emote != "null":
                 best_times.append(sorted_items[index][0])
             else:
@@ -116,70 +129,79 @@ def plot_video_data(video_id, times, filters, limit=50, offset=10):
         best_times = sorted(best_times, key=util.get_seconds)
 
         for time in best_times:
-            best_labels.append(times[time][0])
-            best_values.append(times[time][1])
+            best_labels.append(activity[time][0][0])
+            best_values.append(activity[time][0][1])
 
     # Show peaks
     else:
-        keys = list(times.keys())
-        tup_values = list(times.values())
+        keys = list(activity.keys())
+        tup_values = list(activity.values())
         labels = []
         values = []
 
         for value in tup_values:
-            labels.append(value[0])
-            values.append(value[1])
+            labels.append(value[0][0])
+            values.append(value[0][1])
 
-        x = np.array(values)
-        peaks, _ = find_peaks(x, prominence=1)  # 12-13 is best, need to test on other logs
+        emotes_x = np.array(values)
+        peaks, _ = find_peaks(emotes_x, prominence=1)  # 12-13 is best, need to test on other logs
 
         for peak in peaks:
             time = keys[peak]
-            if times[time][0] != "null":
+            if activity[time][0][0] != "null":
                 best_times.append(time)
-                best_labels.append(times[time][0])
-                best_values.append(times[time][1])
+                best_labels.append(activity[time][0][0])
+                best_values.append(activity[time][0][1])
 
-    x = best_times
-    y = best_values
+    emotes_x = best_times
+    emotes_y = best_values
 
     plt.ion()
-    fig, ax = plt.subplots()
-    ax.scatter(x, y, picker=True)
+    fig, ax = plt.subplots(2)
+    fig.tight_layout(pad=3.0)
 
-    fig.canvas.set_window_title("Chat Reactions Over Played Stream")
+    ax[0].scatter(emotes_x, emotes_y, picker=True)
+    ax[1].plot(messages_x, messages_y, picker=True)
+    ax[1].get_yaxis().set_ticks([])
+
+    for ax_i in ax:
+        ax_i.get_xaxis().set_ticks([])
+
+    fig.canvas.set_window_title(video_info.title + " - " + video_info.user_name)
     # fig.suptitle(video_title + "\nChannel:  " + channel)
 
     filter_set = ""
     if filters:
         max_filters = 5
         if len(filters) > max_filters:
-            for f in range (0, max_filters):
+            for f in range(0, max_filters):
                 filter_set += filters[f] + ", "
             filter_set += "... +{} emotes".format(len(filters) - max_filters)
         else:
             filter_set = ", ".join([str(filter) for filter in filters])
     else:
         filter_set = "All emotes"
-    fig.suptitle("\n".join(wrap("Top Reactions: " + filter_set)))
+
+    ax[0].title.set_text("\n".join(wrap("Top Reactions: " + filter_set)))
+    ax[1].title.set_text("Message Activity")
+
 
     # Show info when hovering cursor
-    mplcursors.cursor(plt.gca().get_children(), hover=True).connect(
+    mplcursors.cursor(ax[0].get_children(), hover=True).connect(
         "add", lambda sel: sel.annotation.set_text(
             best_times[sel.target.index] + "\n" + best_labels[sel.target.index]))
 
-    gca = plt.gca()
-    gca.axes.get_xaxis().set_ticks([])
-
     # TODO: Fix random "'PickEvent' object has no attribute 'ind'" error
-    def on_pick(event):
+    def on_pick(event: PickEvent):
         try:
-            ind = int(event.ind[0])
-            plt.plot(x[ind], y[ind], 'ro')
-            fig.canvas.draw()
-            timestamp = x[ind]
-            link_secs = util.get_seconds(timestamp) - offset
-            webbrowser.open(util.timestamp_url(video_id, link_secs), new=0, autoraise=True)
+            axes = event.artist.axes
+            if axes == ax[0]:
+                ind = int(event.ind[0])
+                axes.plot(emotes_x[ind], emotes_y[ind], 'ro')
+                fig.canvas.draw()
+                timestamp = emotes_x[ind]
+                link_secs = util.get_seconds(timestamp) - offset
+                webbrowser.open(util.timestamp_url(video_info.id, link_secs), new=0, autoraise=True)
         except Exception as e:
             # Ignore error for now... not breaking functionality
             # print(e)

@@ -184,7 +184,7 @@ class Ui(QMainWindow):
             self.harvestBtn.repaint()
             if invalid is None:
                 self.update_status("")
-                analyze.plot_video_data(self.video_id, data, valid, int(self.showMax.text()),
+                analyze.plot_video_data(collect.video_info, data, valid, int(self.showMax.text()),
                                         int(self.linkOffset.text()))
             else:
                 self.update_status("Error: ' {} ' is not a valid filter".format(invalid))
