@@ -103,6 +103,7 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, limit=50,
     best_times = []
     best_labels = []
     best_values = []
+    emote_times = {}
 
     # Message Activity
 
@@ -144,7 +145,7 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, limit=50,
             values.append(value[0][1])
 
         emotes_x = np.array(values)
-        peaks, _ = find_peaks(emotes_x, prominence=1)  # 12-13 is best, need to test on other logs
+        peaks, _ = find_peaks(emotes_x, prominence=12)  # 12-13 is best, need to test on other logs
 
         for peak in peaks:
             time = keys[peak]
@@ -156,19 +157,30 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, limit=50,
     emotes_x = best_times
     emotes_y = best_values
 
+    for i, x in enumerate(best_times):
+        emote_times[activity[x][1][0]] = i
+
     plt.ion()
-    fig, ax = plt.subplots(2)
+    fig, ax = plt.subplots(2, figsize=(15, 8))
+    fig.canvas.set_window_title(video_info.user_name + " - " + video_info.title)
     fig.tight_layout(pad=3.0)
 
     ax[0].scatter(emotes_x, emotes_y, picker=True)
+
     ax[1].plot(messages_x, messages_y, picker=True)
     ax[1].get_yaxis().set_ticks([])
 
-    for ax_i in ax:
-        ax_i.get_xaxis().set_ticks([])
+    for axes in ax:
+        axes.get_xaxis().set_ticks([])
 
-    fig.canvas.set_window_title(video_info.title + " - " + video_info.user_name)
-    # fig.suptitle(video_title + "\nChannel:  " + channel)
+    r_x = []
+    r_y = []
+
+    for i, x in enumerate(emotes_x):
+        r_x.append(activity[emotes_x[i]][1][0])
+        r_y.append(activity[emotes_x[i]][1][1])
+
+    ax[1].scatter(r_x, r_y, c='green')
 
     filter_set = ""
     if filters:
@@ -185,9 +197,12 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, limit=50,
     ax[0].title.set_text("\n".join(wrap("Top Reactions: " + filter_set)))
     ax[1].title.set_text("Message Activity")
 
-
     # Show info when hovering cursor
     mplcursors.cursor(ax[0].get_children(), hover=True).connect(
+        "add", lambda sel: sel.annotation.set_text(
+            best_times[sel.target.index] + "\n" + best_labels[sel.target.index]))
+
+    mplcursors.cursor(ax[1].get_children()[0], hover=True).connect(
         "add", lambda sel: sel.annotation.set_text(
             best_times[sel.target.index] + "\n" + best_labels[sel.target.index]))
 
@@ -195,13 +210,18 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, limit=50,
     def on_pick(event: PickEvent):
         try:
             axes = event.artist.axes
-            if axes == ax[0]:
-                ind = int(event.ind[0])
-                axes.plot(emotes_x[ind], emotes_y[ind], 'ro')
-                fig.canvas.draw()
-                timestamp = emotes_x[ind]
-                link_secs = util.get_seconds(timestamp) - offset
-                webbrowser.open(util.timestamp_url(video_info.id, link_secs), new=0, autoraise=True)
+            ind = int(event.ind[0])
+            if axes == ax[1]:
+                if messages_x[ind] in emote_times:
+                    ind = emote_times[messages_x[ind]]
+                else:
+                    return
+            ax[0].plot(emotes_x[ind], emotes_y[ind], 'ro')
+            ax[1].plot(r_x[ind], r_y[ind], 'ro')
+            fig.canvas.draw()
+            timestamp = emotes_x[ind]
+            link_secs = util.get_seconds(timestamp) - offset
+            webbrowser.open(util.timestamp_url(video_info.id, link_secs), new=0, autoraise=True)
         except Exception as e:
             # Ignore error for now... not breaking functionality
             # print(e)
