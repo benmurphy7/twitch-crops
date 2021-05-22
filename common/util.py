@@ -59,6 +59,13 @@ def top_item(x):
     return sorted_x[0]
 
 
+def total_value(d):
+    v = 0
+    for k in d:
+        v += d[k][0]
+    return v
+
+
 def add_value(d, k, v0, v1):
     if k in d:
         d[k] = (d[k][0] + v0, d[k][1])
