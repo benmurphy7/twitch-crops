@@ -82,15 +82,6 @@ def timestamp_url(video_id, secs):
     return url
 
 
-def is_new_max(list, value):
-    if list:
-        for item in list:
-            if value > item:
-                return True
-    else:
-        return True
-
-
 def filter_match(filter, string):
     if "\"" in filter:
         if filter.replace("\"", "") in string:

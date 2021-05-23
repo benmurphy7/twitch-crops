@@ -77,8 +77,8 @@ def track_emotes(parsed, emotes, window_size, filters=None):
             # TODO: Find max chat message counts and shift top emotes to that peak if close?
             # TODO: Find max chat peaks and then take top emote for that window?
             if top_emote is prev_emote:
-                if util.is_new_max(top_counts, top_count):
-                    top_counts.append(top_count)
+                if top_count > emote_max:
+                    emote_max = top_count
                     """
                     if activity[first_emote_timestamp][1][1] > top_message[1]:
                         top_message[0] = first_emote_timestamp
@@ -93,7 +93,7 @@ def track_emotes(parsed, emotes, window_size, filters=None):
                 top_pair = [top_emote, 0]
 
             else:
-                top_counts = []
+                emote_max = 0
                 top_message = ["", 0]
                 first_window_timestamp = first_emote_timestamp
 
@@ -170,6 +170,7 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
             if len(best_emote_times) < limit:
                 emote = item[1][0][0]
                 count = item[1][0][1]
+                # TODO: Handle non-max windows in chain - potential exclusion and non-peak points
                 if emote != "null" and count > 0:
                     best_emote_times.append(item[0])
 
@@ -179,10 +180,14 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
             best_labels.append(activity[time][0][0])
 
         # Sort by message activity
+        visited = []
         sorted_items = sorted(list(activity.items()), key=lambda x: x[1][1][1], reverse=True)
         for item in sorted_items:
             if len(best_msg_times) < limit:
-                best_msg_times.append(item[0])
+                visited.append(item[0])
+                if not linked_window(activity, item[0], visited):
+                    best_msg_times.append(item[0])
+
         best_msg_times = sorted(best_msg_times, key=util.get_seconds)
 
     else:
@@ -307,6 +312,26 @@ def mpl_label(axis, times, artists, activity):
     mplcursors.cursor(axis.get_children()[0], hover=True).connect(
         "add", lambda sel: sel.annotation.set_text(
             times[sel.target.index] + "\n" + activity[times[sel.target.index]][0][0]))
+
+
+def linked_window(activity: dict, time, visited):
+    emote = activity[time][0][0]
+    keys = list(activity.keys())
+    index = keys.index(time)
+
+    for n in get_neighbors(keys, index):
+        if n in visited and activity[n][0][0] == emote:
+            return True
+    return False
+
+
+def get_neighbors(list, index):
+    neighbors = []
+    if index > 0:
+        neighbors.append(list[index - 1])
+    if index < len(list) - 1:
+        neighbors.append(list[index + 1])
+    return neighbors
 
 
 def plot_dict(dict):
