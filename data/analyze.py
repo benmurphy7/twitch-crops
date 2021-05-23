@@ -315,22 +315,23 @@ def mpl_label(axis, times, artists, activity):
 
 
 def linked_window(activity: dict, time, visited):
-    emote = activity[time][0][0]
     keys = list(activity.keys())
     index = keys.index(time)
-
-    for n in get_neighbors(keys, index):
-        if n in visited and activity[n][0][0] == emote:
+    for n in get_neighbors(keys, index, 2):
+        if n in visited:
             return True
     return False
 
 
-def get_neighbors(list, index):
+def get_neighbors(list, index, radius):
     neighbors = []
-    if index > 0:
-        neighbors.append(list[index - 1])
-    if index < len(list) - 1:
-        neighbors.append(list[index + 1])
+    for r in range(1, radius + 1):
+        i = index - r
+        if i >= 0:
+            neighbors.append(list[i])
+        i = index + r
+        if i < len(list):
+            neighbors.append(list[i])
     return neighbors
 
 
