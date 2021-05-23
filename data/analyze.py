@@ -50,8 +50,8 @@ def track_emotes(parsed, emotes, window_size, filters=None):
 
     for comment in parsed:
         timestamp = comment[0]
-        if first_message_timestamp == "":
-            first_message_timestamp = timestamp;
+        if not first_message_timestamp:
+            first_message_timestamp = timestamp
         user = comment[1]
         message = comment[2]
         rounded_time = util.round_down(util.get_seconds(timestamp), window_size)
@@ -66,6 +66,8 @@ def track_emotes(parsed, emotes, window_size, filters=None):
             # Get max from ending window
             top_item = util.top_item(window_data)
             first_emote_timestamp = top_item[1][1]
+            if not first_emote_timestamp:
+                first_emote_timestamp = first_message_timestamp
             total_value = util.total_value(window_data)
 
             top_pair = [top_item[0], top_item[1][0]]
@@ -79,11 +81,7 @@ def track_emotes(parsed, emotes, window_size, filters=None):
             if top_emote is prev_emote:
                 if top_count > emote_max:
                     emote_max = top_count
-                    """
-                    if activity[first_emote_timestamp][1][1] > top_message[1]:
-                        top_message[0] = first_emote_timestamp
-                        top_message[1] = activity[first_emote_timestamp][1][1]
-                        """
+
                     # Move max to first timestamp
                     activity_data = activity[first_window_timestamp]
                     new_activity_data = [[top_emote, top_count, total_value], activity_data[1]]
@@ -94,7 +92,6 @@ def track_emotes(parsed, emotes, window_size, filters=None):
 
             else:
                 emote_max = 0
-                top_message = ["", 0]
                 first_window_timestamp = first_emote_timestamp
 
             top_pair.append(total_value)
