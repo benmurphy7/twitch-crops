@@ -22,7 +22,7 @@ def get_client_info(file):
 
 def add_emote(key, url):
     global chat_emotes
-    key = util.get_normal_name(key)
+    #key = util.get_normal_name(key)
     if key not in chat_emotes:
         chat_emotes[key] = url
         return 1
