@@ -78,8 +78,9 @@ def track_emotes(parsed, emotes, window_size, filters=None):
             # TODO: Assign top count to window with highest message count?
             # TODO: Find max chat message counts and shift top emotes to that peak if close?
             if top_emote is prev_emote:
-                if top_count > emote_max:
-                    emote_max = top_count
+                if total_value > emote_max:
+                    emote_max = total_value
+                    activity[previous_timestamp] = [[top_emote, 0, 0], [first_message_timestamp, message_count]]
                 else:
                     # Flatten non-max window
                     top_emote_data = [top_emote, 0, 0]
@@ -94,6 +95,7 @@ def track_emotes(parsed, emotes, window_size, filters=None):
             prev_emote = top_emote
             window_start = rounded_time
             window_data = {}
+            previous_timestamp = first_emote_timestamp
 
         message_count += 1
 
@@ -305,7 +307,7 @@ def mpl_label(axis, times, artists, activity, plot):
 def set_text(times, activity, index, plot):
     text = times[index]
     if plot == 0:
-        text += "\n" + activity[times[plot]][0][0]
+        text += "\n" + activity[times[index]][0][0]
     return text
 
 
