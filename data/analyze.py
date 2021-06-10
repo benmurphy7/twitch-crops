@@ -265,8 +265,8 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
     artists = []
 
     # Show info when hovering cursor
-    mpl_label(ax[0], best_emote_times, artists, activity)
-    mpl_label(ax[1], best_msg_times, artists, activity)
+    mpl_label(ax[0], best_emote_times, artists, activity, 0)
+    mpl_label(ax[1], best_msg_times, artists, activity, 1)
 
     # TODO: Fix random "'PickEvent' object has no attribute 'ind'" error
     def on_pick(event: PickEvent):
@@ -296,11 +296,17 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
         plt.show()
 
 
-def mpl_label(axis, times, artists, activity):
+def mpl_label(axis, times, artists, activity, plot):
     artists.append(axis.get_children()[0])
     mplcursors.cursor(axis.get_children()[0], hover=True).connect(
-        "add", lambda sel: sel.annotation.set_text(
-            times[sel.target.index] + "\n" + activity[times[sel.target.index]][0][0]))
+        "add", lambda sel: sel.annotation.set_text(set_text(times, activity, sel.target.index, plot)))
+
+
+def set_text(times, activity, index, plot):
+    text = times[index]
+    if plot == 0:
+        text += "\n" + activity[times[plot]][0][0]
+    return text
 
 
 def linked_window(activity: dict, time, visited):
