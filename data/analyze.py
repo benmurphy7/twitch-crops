@@ -70,32 +70,24 @@ def track_emotes(parsed, emotes, window_size, filters=None):
                 first_emote_timestamp = first_message_timestamp
             total_value = util.total_value(window_data)
 
-            top_pair = [top_item[0], top_item[1][0]]
-            top_emote = top_pair[0]
-            top_count = top_pair[1]
+            top_emote = top_item[0]
+            top_count = top_item[1][0]
+            top_emote_data = [top_emote, top_count, total_value]
 
             # Check for repeated windows and merge
             # TODO: Assign top count to window with highest message count?
             # TODO: Find max chat message counts and shift top emotes to that peak if close?
-            # TODO: Find max chat peaks and then take top emote for that window?
             if top_emote is prev_emote:
                 if top_count > emote_max:
                     emote_max = top_count
-
-                    # Move max to first timestamp
-                    activity_data = activity[first_window_timestamp]
-                    new_activity_data = [[top_emote, top_count, total_value], activity_data[1]]
-                    activity[first_window_timestamp] = new_activity_data
-
-                # Flatten repeated window
-                top_pair = [top_emote, 0]
+                else:
+                    # Flatten non-max window
+                    top_emote_data = [top_emote, 0, 0]
 
             else:
-                emote_max = 0
-                first_window_timestamp = first_emote_timestamp
+                emote_max = top_count
 
-            top_pair.append(total_value)
-            activity[first_emote_timestamp] = [top_pair, [first_message_timestamp, message_count]]
+            activity[first_emote_timestamp] = [top_emote_data, [first_message_timestamp, message_count]]
 
             first_message_timestamp = timestamp
             message_count = 0

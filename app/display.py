@@ -53,7 +53,7 @@ class Ui(QMainWindow):
         else:
             self.harvestBtn.setDisabled(True)
             self.harvestBtn.repaint()
-            self.update_status("Fetching stream info...")
+            self.update_status("Fetching stream info ...")
             self.video_id = video_id
             chat_emotes = collect.get_available_emotes()
             if chat_emotes is None:
@@ -69,7 +69,7 @@ class Ui(QMainWindow):
 
             try:
                 if urls:
-                    self.update_status("Downloading images...")
+                    self.update_status("Downloading images ...")
                     images.get_images(urls)
             except Exception as e:
                 print(e)
@@ -170,14 +170,14 @@ class Ui(QMainWindow):
             self.update_status("Downloading [{}] ...".format(self.video_id))
             self.download_process()
         elif self.harvestBtn.text() == "Sync":
-            self.update_status("Syncing latest changes...")
+            self.update_status("Syncing latest changes ...")
             self.download_process()
         else:
             if not logs.chat_log_exists(self.video_id):
                 self.harvestBtn.setDisabled(False)
                 self.harvestBtn.repaint()
                 return
-            self.update_status("Analyzing...")
+            self.update_status("Analyzing ...")
             data, valid, invalid, stats = logs.parse_vod_log(self.video_id, self.chat_emotes, filters,
                                                         int(self.windowSize.text()))
             self.harvestBtn.setDisabled(False)
