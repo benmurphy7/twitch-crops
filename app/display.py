@@ -19,6 +19,7 @@ class Ui(QMainWindow):
         self.process = None
         self.process_id = ""
         self.update_id = False
+        self.lock_emotes = False
 
         self.search_timer = QTimer()
         self.search_timer_length = 0
@@ -46,6 +47,7 @@ class Ui(QMainWindow):
         self.updateBtn.setDisabled(True)
         self.updateBtn.repaint()
         video_id = self.vodEntry.currentText()
+        self.lock_emotes = True
         self.emoteSearch.setText("")
         if not video_id or not collect.update_video_info(video_id):
             self.invalid_id()
@@ -74,6 +76,7 @@ class Ui(QMainWindow):
             except Exception as e:
                 print(e)
 
+            self.lock_emotes = False
             self.display_emotes()
             self.update_status("")
 
@@ -220,41 +223,42 @@ class Ui(QMainWindow):
         self.scrollAreaWidgetContents.repaint()
 
     def display_emotes(self):
-        emote_area = self.scrollAreaWidgetContents.layout()
-        self.clear_emote_area()
-        names = sorted(self.chat_emotes.keys(), key=lambda s: s.lower())
-        cols = 4
-        x, y = 0, 0
-        for name in names:
-            if self.emoteSearch.text().lower() in name.lower():
+        if not self.lock_emotes:
+            emote_area = self.scrollAreaWidgetContents.layout()
+            self.clear_emote_area()
+            names = sorted(self.chat_emotes.keys(), key=lambda s: s.lower())
+            cols = 4
+            x, y = 0, 0
+            for name in names:
+                if self.emoteSearch.text().lower() in name.lower():
 
-                vbox = QVBoxLayout()
-                vbox.setAlignment(Qt.AlignCenter)
-                frame = QFrame()
-                frame.setLayout(vbox)
+                    vbox = QVBoxLayout()
+                    vbox.setAlignment(Qt.AlignCenter)
+                    frame = QFrame()
+                    frame.setLayout(vbox)
 
-                movie = QMovie(images.get_path(self.chat_emotes[name]))
-                gif = QLabel()
-                gif.setAlignment(Qt.AlignHCenter)
-                gif.setMovie(movie)
+                    movie = QMovie(images.get_path(self.chat_emotes[name]))
+                    gif = QLabel()
+                    gif.setAlignment(Qt.AlignHCenter)
+                    gif.setMovie(movie)
 
-                # TODO: Silence libpng warning, or remove incorrect sRGB profiles
-                movie.start()
+                    # TODO: Silence libpng warning, or remove incorrect sRGB profiles
+                    movie.start()
 
-                text = QLabel()
-                text.setAlignment(Qt.AlignHCenter)
-                text.setText(name)
-                text.setTextInteractionFlags(Qt.TextSelectableByMouse)
+                    text = QLabel()
+                    text.setAlignment(Qt.AlignHCenter)
+                    text.setText(name)
+                    text.setTextInteractionFlags(Qt.TextSelectableByMouse)
 
-                vbox.addWidget(gif)
-                vbox.addWidget(text)
+                    vbox.addWidget(gif)
+                    vbox.addWidget(text)
 
-                emote_area.addWidget(frame, y, x)
+                    emote_area.addWidget(frame, y, x)
 
-                x += 1
-                if x >= cols:
-                    x = 0
-                    y += 1
+                    x += 1
+                    if x >= cols:
+                        x = 0
+                        y += 1
 
 
 window: Ui = None
