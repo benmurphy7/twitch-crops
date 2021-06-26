@@ -118,18 +118,7 @@ def get_available_emotes():
         print("Error loading FFZ emotes")
         pass
 
-    # Get global twitch emotes
-    global_emotes = req.get('https://api.twitchemotes.com/api/v4/channels/0').json()
-    for emote in global_emotes['emotes']:
-        ttv += add_ttv_emote(emote)
-
-    # Get twitch channel emotes
-    try:
-        channel_emotes = req.get('https://api.twitchemotes.com/api/v4/channels/' + video_info.user_id).json()
-        for emote in channel_emotes['emotes']:
-            ttv += add_ttv_emote(emote)
-    except:
-        print("Error loading Twitch channel emotes")
+    # TODO: Get global emotes from new endpoint
 
     print("\nFound {} available emotes:".format(len(chat_emotes)))
     print("\nTTV: {}\nBTTV: {}\nFFZ: {}\n".format(ttv, bttv, ffz))
