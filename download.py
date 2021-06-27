@@ -1,7 +1,7 @@
 import sys
 
 from data import collect, logs
-import main
+import TwitchCrops
 
 
 def download(video_id):
@@ -15,7 +15,7 @@ def download(video_id):
 
 
 if __name__ == '__main__':
-    main.setup()
+    TwitchCrops.setup()
     if collect.client is None:
         collect.client = collect.initialize_client()
     download(sys.argv[1])
