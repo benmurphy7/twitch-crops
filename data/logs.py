@@ -5,6 +5,8 @@ from datetime import timedelta
 from os import path
 from pathlib import Path
 
+from PyQt5.QtCore import pyqtSignal
+
 from data import analyze, collect
 from common import util, config
 
@@ -25,7 +27,6 @@ def get_existing_logs():
         if filename.endswith(".log"):
             log_list.append(filename)
     return log_list
-
 
 
 def parse_log(log_path):
@@ -146,11 +147,14 @@ def format_comment(comment):
     return "[{}] <{}> {}\n".format(timestamp, commenter, message)
 
 
-def download_progress(comment):
+def download_progress(comment, signal: pyqtSignal = None):
     current = float(comment['content_offset_seconds'])
     end = util.link_time_to_seconds(collect.video_info.duration)
-    sys.stdout.flush()
-    sys.stdout.write('[{}] {}%\r'.format("Downloading", '%.2f' % min(current * 10 / end * 10, 100.00)))
+    if signal is not None:
+        signal.emit('[{}] {}%\r'.format("Downloading", '%.2f' % min(current * 10 / end * 10, 100.00)))
+    else:
+        sys.stdout.flush()
+        sys.stdout.write('[{}] {}%\r'.format("Downloading", '%.2f' % min(current * 10 / end * 10, 100.00)))
 
 
 def get_comments(cursor):
@@ -163,7 +167,7 @@ def get_fragment(cursor):
 
 
 # Download, appending to existing log if exists
-def download_log():
+def download_log(signal: pyqtSignal = None):
     file = get_log_path(collect.video_info.id)
     cursor = cursor_update(collect.video_info.id)
     try:
@@ -172,7 +176,7 @@ def download_log():
                 chunk = ''
                 fragment = get_fragment(cursor)
                 comments = fragment['comments']
-                download_progress(comments[-1])
+                download_progress(comments[-1], signal)
                 for comment in comments:
                     chunk += format_comment(comment)
                 if '_next' in fragment:

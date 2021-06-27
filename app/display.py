@@ -1,7 +1,7 @@
 import sys
 
 from PyQt5 import uic
-from PyQt5.QtCore import Qt, QProcess, QTimer
+from PyQt5.QtCore import Qt, QProcess, QTimer, QObject, pyqtSignal, QThread
 from PyQt5.QtGui import QMovie
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QFrame, QLabel, QMainWindow
 
@@ -20,6 +20,10 @@ class Ui(QMainWindow):
         self.process_id = ""
         self.update_id = False
         self.lock_emotes = False
+        self.downloading = False
+
+        self.thread = None
+        self.worker = None
 
         self.search_timer = QTimer()
         self.search_timer_length = 0
@@ -85,16 +89,24 @@ class Ui(QMainWindow):
 
     def download_process(self):
         try:
-            if self.process is None:
-                self.process = QProcess()
-                self.process_id = self.video_id
-                self.process.readyReadStandardOutput.connect(self.handle_stdout)
-                self.process.readyReadStandardError.connect(self.handle_stderr)
-                self.process.stateChanged.connect(self.handle_state)
-                self.process.finished.connect(self.process_finished)
-                self.process.start(sys.executable, [config.download_script, self.video_id])
-                self.set_harvest_text(self.video_id)
-                self.update_id = True
+            if not self.downloading:
+                if collect.update_video_info(self.video_id):
+                    if not logs.chat_log_exists(self.video_id) or logs.cursor_update(self.video_id):
+                        self.downloading = True
+                        self.process_id = self.video_id
+
+                        self.thread = QThread(parent=self)
+                        self.worker = Worker()
+
+                        self.worker.moveToThread(self.thread)
+
+                        self.thread.started.connect(self.worker.run)
+                        self.worker.progress.connect(self.update_status)
+                        self.worker.finished.connect(self.process_finished)
+
+                        self.thread.start()
+                        self.set_harvest_text(self.video_id)
+
         except Exception as e:
             print(e)
 
@@ -130,6 +142,7 @@ class Ui(QMainWindow):
 
     def process_finished(self):
         self.process = None
+        self.downloading = False
         self.harvestBtn.setDisabled(False)
         self.set_harvest_text(self.video_id)
         status = "Download complete: "
@@ -137,12 +150,16 @@ class Ui(QMainWindow):
             status = "Chat data currently unavailable: "
         self.update_status(status + self.process_id)
 
+        self.thread.quit
+        self.worker.deleteLater
+        self.thread.deleteLater
+
     def enable_download(self, text):
         self.harvestBtn.setText(text)
-        self.harvestBtn.setEnabled(self.process is None)
+        self.harvestBtn.setEnabled(self.downloading is False)
 
     def is_downloading(self, video_id):
-        return self.process is not None and self.process_id == video_id
+        return self.downloading and self.process_id == video_id
 
     def update_ids(self):
         self.vodEntry.clear()
@@ -157,7 +174,7 @@ class Ui(QMainWindow):
             else:
                 self.enable_download("Download")
 
-            if logs.cursor_update(video_id) and self.process is None:
+            if logs.cursor_update(video_id) and self.downloading is False:
                 self.enable_download("Sync")
 
             self.harvestBtn.repaint()
@@ -259,6 +276,15 @@ class Ui(QMainWindow):
                     if x >= cols:
                         x = 0
                         y += 1
+
+
+class Worker(QObject):
+    finished = pyqtSignal()
+    progress = pyqtSignal(str)
+
+    def run(self):
+        logs.download_log(self.progress)
+        self.finished.emit()
 
 
 window: Ui = None

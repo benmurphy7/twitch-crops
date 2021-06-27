@@ -6,7 +6,7 @@ download_dir = os.path.join(resource_dir, 'downloads')
 
 images_dir = os.path.join(resource_dir, 'images')
 
-ui_template = os.path.join(resource_dir, 'BasicForm.ui')
+ui_template = os.path.join('BasicForm.ui')
 
 download_script = "download.py"
 

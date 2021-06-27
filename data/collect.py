@@ -2,7 +2,7 @@ import re
 
 import gevent.monkey
 
-from common import config, util
+from common import config
 
 gevent.monkey.patch_all()
 
