@@ -1,6 +1,7 @@
 import ntpath
 import os
 import sys
+import traceback
 from datetime import timedelta
 from os import path
 from pathlib import Path
@@ -147,14 +148,15 @@ def format_comment(comment):
     return "[{}] <{}> {}\n".format(timestamp, commenter, message)
 
 
-def download_progress(comment, signal: pyqtSignal = None):
+def download_progress(video_id, comment, end, signal: pyqtSignal = None):
     current = float(comment['content_offset_seconds'])
-    end = util.link_time_to_seconds(collect.video_info.duration)
+    status = '( Downloading )  [ {} ]  -  {}%\r'.format(video_id, '%.2f' % min(current * 10 / end * 10, 100.00))
+
     if signal is not None:
-        signal.emit('[{}] {}%\r'.format("Downloading", '%.2f' % min(current * 10 / end * 10, 100.00)))
+        signal.emit(status)
     else:
         sys.stdout.flush()
-        sys.stdout.write('[{}] {}%\r'.format("Downloading", '%.2f' % min(current * 10 / end * 10, 100.00)))
+        sys.stdout.write(status)
 
 
 def get_comments(cursor):
@@ -162,21 +164,24 @@ def get_comments(cursor):
     return fragment['comments']
 
 
-def get_fragment(cursor):
-    return collect.video_info.comments.fragment(cursor)
+def get_fragment(comments, cursor):
+    return comments.fragment(cursor)
 
 
 # Download, appending to existing log if exists
-def download_log(signal: pyqtSignal = None):
-    file = get_log_path(collect.video_info.id)
-    cursor = cursor_update(collect.video_info.id)
+def download_log(video_info, signal: pyqtSignal = None):
+    video_id = video_info.id
+    file = get_log_path(video_id)
+    cursor = cursor_update(video_id)
+    end = util.link_time_to_seconds(video_info.duration)
+
     try:
         with open(file, 'a+', encoding='utf-8') as file:
             while True:
                 chunk = ''
-                fragment = get_fragment(cursor)
+                fragment = get_fragment(video_info.comments, cursor)
                 comments = fragment['comments']
-                download_progress(comments[-1], signal)
+                download_progress(video_id, comments[-1], end, signal)
                 for comment in comments:
                     chunk += format_comment(comment)
                 if '_next' in fragment:
@@ -187,8 +192,8 @@ def download_log(signal: pyqtSignal = None):
                 file.write(chunk)
                 if '_next' not in fragment:
                     break
-    except Exception as e:
-        print(e)
+    except Exception:
+        traceback.print_exception(*sys.exc_info())
 
 
 def cursor_update(video_id):

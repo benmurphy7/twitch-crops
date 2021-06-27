@@ -1,3 +1,4 @@
+import copy
 import sys
 
 from PyQt5 import uic
@@ -148,7 +149,7 @@ class Ui(QMainWindow):
         status = "Download complete: "
         if not logs.chat_log_exists(self.process_id):
             status = "Chat data currently unavailable: "
-        self.update_status(status + self.process_id)
+        self.update_status(status + "[ {} ]".format(self.process_id))
 
         self.thread.quit
         self.worker.deleteLater
@@ -174,7 +175,7 @@ class Ui(QMainWindow):
             else:
                 self.enable_download("Download")
 
-            if logs.cursor_update(video_id) and self.downloading is False:
+            if self.downloading is False and logs.cursor_update(video_id):
                 self.enable_download("Sync")
 
             self.harvestBtn.repaint()
@@ -283,7 +284,7 @@ class Worker(QObject):
     progress = pyqtSignal(str)
 
     def run(self):
-        logs.download_log(self.progress)
+        logs.download_log(copy.deepcopy(collect.video_info), self.progress)
         self.finished.emit()
 
 
