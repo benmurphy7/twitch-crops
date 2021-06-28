@@ -1,5 +1,6 @@
 import copy
 import sys
+import time
 
 from PyQt5 import uic
 from PyQt5.QtCore import Qt, QProcess, QTimer, QObject, pyqtSignal, QThread
@@ -95,6 +96,7 @@ class Ui(QMainWindow):
                     if not logs.chat_log_exists(self.video_id) or logs.cursor_update(self.video_id):
                         self.downloading = True
                         self.process_id = self.video_id
+                        self.update_id = True
 
                         self.thread = QThread(parent=self)
                         self.worker = Worker()
@@ -107,6 +109,12 @@ class Ui(QMainWindow):
 
                         self.thread.start()
                         self.set_harvest_text(self.video_id)
+
+                        while self.update_id:
+                            time.sleep(0.5)
+                            if logs.chat_log_exists(self.process_id):
+                                self.update_ids()
+                                self.update_id = False
 
         except Exception as e:
             print(e)
