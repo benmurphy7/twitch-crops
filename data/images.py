@@ -1,12 +1,8 @@
 import hashlib
 import os
 
-import gevent.monkey
-
 from app import display
 from common import config
-
-gevent.monkey.patch_all()
 
 import grequests as greq
 

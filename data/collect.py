@@ -1,10 +1,6 @@
 import re
 
-import gevent.monkey
-
 from common import config
-
-gevent.monkey.patch_all()
 
 import requests as req
 import twitch

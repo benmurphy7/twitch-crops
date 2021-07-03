@@ -1,5 +1,11 @@
+print("Patching gevent...")
+import gevent.monkey
+gevent.monkey.patch_all()
+print("Patch complete.")
+
 import os
 import sys
+import time
 
 from data import collect
 from app import display
@@ -9,6 +15,7 @@ from common import config
 def setup():
     if not os.path.exists(config.client_info):
         print("Error: {} not found".format(config.client_info))
+        time.sleep(3)
         sys.exit(0)
 
     check_for_dirs = [config.images_dir, config.download_dir]

@@ -18,7 +18,7 @@
 
 4. Download / Sync / Analyze
 
-	-New VOD IDs will begin downloading.
+	-Only one log can be downloaded at a time (for now)
  
 	-Existing logs will "Sync" and continue downloading if incomplete.
 
@@ -26,3 +26,6 @@
 
 
 The resulting plot will show timestamp points which can be clicked to open / play.
+
+
+Tip: If videos take a long time to load, try swapping to a new tab then back.

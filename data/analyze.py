@@ -218,17 +218,22 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
     emotes_x = best_emote_times
 
     plt.ion()
-    fig, ax = plt.subplots(2, figsize=(15, 8))
+    fig, axes = plt.subplots(2, figsize=(15, 8))
     fig.canvas.set_window_title(video_info.user_name + " - " + video_info.title)
     fig.tight_layout(pad=3.0)
 
-    ax[0].plot(emote_act_x, emote_act_y, picker=True, c='green', zorder=0)
+    axes[0].plot(emote_act_x, emote_act_y, picker=True, c='green', zorder=0)
 
-    ax[1].plot(messages_x, messages_y, picker=True, c='orange', zorder=0)
-    #ax[1].axhline(stats["avg_messages"], color='red', zorder=0)
+    axes[1].plot(messages_x, messages_y, picker=True, c='orange', zorder=0)
 
-    for axes in ax:
-        axes.get_xaxis().set_ticks([])
+    for ax in axes:
+        ax.get_xaxis().set_ticks([])
+        #ax.get_xaxis().set_ticks(generate_ticks(messages_x, 100))
+        #ax.get_xaxis().set_ticks(np.arange(0, len(messages_x), 100))
+
+        #ax.set_xticklabels(ax.get_xticks(), rotation=45)
+
+        #[l.set_visible(False) for (i, l) in enumerate(ax.get_xaxis().get_ticklabels()) if i % 100 != 0]
 
     e_x = []
     e_y = []
@@ -246,8 +251,8 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
         m_y.append(entry[1][1])
 
     # Draw selectable scatter plots
-    ax[0].scatter(e_x, e_y, picker=True, marker='d', c='gold', s=50, zorder=1)
-    ax[1].scatter(m_x, m_y, picker=True, marker='o', c='blue', s=30, zorder=1)
+    axes[0].scatter(e_x, e_y, picker=True, marker='d', c='gold', s=50, zorder=1)
+    axes[1].scatter(m_x, m_y, picker=True, marker='o', c='blue', s=30, zorder=1)
 
     filter_set = ""
     if filters:
@@ -261,27 +266,27 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
     else:
         filter_set = "All emotes"
 
-    ax[0].title.set_text("\n".join(wrap("Top CROPS: " + filter_set)))
-    ax[1].title.set_text("Message Activity")
+    axes[0].title.set_text("\n".join(wrap("Top CROPS: " + filter_set)))
+    axes[1].title.set_text("Message Activity")
 
     artists = []
 
     # Show info when hovering cursor
-    mpl_label(ax[0], best_emote_times, artists, activity, 0)
-    mpl_label(ax[1], best_msg_times, artists, activity, 1)
+    mpl_label(axes[0], best_emote_times, artists, activity, 0)
+    mpl_label(axes[1], best_msg_times, artists, activity, 1)
 
     # TODO: Fix random "'PickEvent' object has no attribute 'ind'" error
     def on_pick(event: PickEvent):
         try:
             if event.artist not in artists:
                 return
-            axes = event.artist.axes
+            event_axes = event.artist.axes
             ind = int(event.ind[0])
-            if axes == ax[0]:
-                ax[0].plot(e_x[ind], e_y[ind], 'rd')
+            if event_axes == axes[0]:
+                axes[0].plot(e_x[ind], e_y[ind], 'rd')
                 timestamp = emotes_x[ind]
-            if axes == ax[1]:
-                ax[1].plot(m_x[ind], m_y[ind], 'ro')
+            if event_axes == axes[1]:
+                axes[1].plot(m_x[ind], m_y[ind], 'ro')
                 timestamp = best_msg_times[ind]
             fig.canvas.draw()
             link_secs = util.get_seconds(timestamp) - offset
@@ -302,6 +307,17 @@ def mpl_label(axis, times, artists, activity, plot):
     artists.append(axis.get_children()[0])
     mplcursors.cursor(axis.get_children()[0], hover=True).connect(
         "add", lambda sel: sel.annotation.set_text(set_text(times, activity, sel.target.index, plot)))
+
+
+def generate_ticks(x_data, interval):
+    ticks = []
+    tick = 0
+    while tick < len(x_data):
+        val = x_data[tick]
+        ticks.append(str(x_data[tick]))
+        tick += interval
+
+    return ticks
 
 
 def set_text(times, activity, index, plot):
