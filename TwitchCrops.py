@@ -1,15 +1,18 @@
 print("Patching gevent...")
 import gevent.monkey
 gevent.monkey.patch_all()
-print("Patch complete.")
+print("Patch complete.\n")
 
 import os
 import sys
 import time
 
+print("Importing collect...")
 from data import collect
+print("Importing display...")
 from app import display
 from common import config
+print("\nMain imports complete.")
 
 
 def setup():

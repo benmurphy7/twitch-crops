@@ -3,7 +3,7 @@ import sys
 import time
 
 from PyQt5 import uic
-from PyQt5.QtCore import Qt, QProcess, QTimer, QObject, pyqtSignal, QThread
+from PyQt5.QtCore import Qt, QProcess, QTimer, QObject, pyqtSignal, QThread, qInstallMessageHandler
 from PyQt5.QtGui import QMovie
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QFrame, QLabel, QMainWindow
 
@@ -39,6 +39,8 @@ class Ui(QMainWindow):
         self.update_ids()
         self.vodEntry.activated.connect(self.update_stream_info)
         self.vodEntry.setCurrentText('')
+
+        qInstallMessageHandler(self.handle_msg)
 
     def disable_button(self, button):
         button.setDisabled(False)
@@ -118,6 +120,9 @@ class Ui(QMainWindow):
 
         except Exception as e:
             print(e)
+
+    def handle_msg(msg_type, idx, msg_log_context, msg_string):
+        pass
 
     def handle_stderr(self):
         try:
@@ -267,8 +272,6 @@ class Ui(QMainWindow):
                     gif = QLabel()
                     gif.setAlignment(Qt.AlignHCenter)
                     gif.setMovie(movie)
-
-                    # TODO: Silence libpng warning, or remove incorrect sRGB profiles
                     movie.start()
 
                     text = QLabel()

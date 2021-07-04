@@ -1,9 +1,12 @@
 import hashlib
 import os
+import warnings
 
 from app import display
 from common import config
 
+print("Importing grequests...")
+warnings.filterwarnings("ignore")
 import grequests as greq
 
 batch_size, completed = 0, 0

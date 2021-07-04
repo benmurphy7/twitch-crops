@@ -2,6 +2,7 @@ import re
 
 from common import config
 
+print("Importing requests...")
 import requests as req
 import twitch
 
@@ -71,6 +72,7 @@ def get_available_emotes():
     global client
     chat_emotes = {}
 
+    print('-'*80)
     print("\nVideo title: " + video_info.title)
     print("Channel: " + video_info.user_name)
 
