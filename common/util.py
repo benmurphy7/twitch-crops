@@ -20,9 +20,10 @@ def link_time(secs):
 
 
 def link_time_to_timestamp(link_time):
-    timestamp = link_time
-    timestamp = timestamp.replace("h", ":").replace("m", ":").replace("s", "")
-    return timestamp
+    if "h" not in link_time:
+        link_time = "0h" + link_time
+    return link_time.replace("h", ":").replace("m", ":").replace("s", "")
+
 
 
 def link_time_to_seconds(link_time):
