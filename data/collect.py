@@ -19,7 +19,7 @@ def get_client_info(file):
 
 def add_emote(key, url):
     global chat_emotes
-    #key = util.get_normal_name(key)
+
     if "-" in key:
         return 0
     if key not in chat_emotes:
@@ -34,7 +34,13 @@ def get_value(key, str):
 
 
 def get_emote_info(emote):
-    return emote['code'], emote['id']
+    string = ""
+    if 'name' in emote:
+        string = emote['name']
+    elif 'code' in emote:
+        string = emote['code']
+
+    return string, emote['id']
 
 
 def add_bttv_emote(emote):
@@ -99,7 +105,6 @@ def get_available_emotes():
             bttv += add_bttv_emote(emote)
     except:
         print("Error loading BTTV emotes")
-        pass
 
     # Get FFZ emotes
     try:
@@ -114,9 +119,22 @@ def get_available_emotes():
                 ffz += add_emote(name, url)
     except:
         print("Error loading FFZ emotes")
-        pass
 
-    # TODO: Get global emotes from new endpoint
+    # Get global twitch emotes
+    try:
+        global_emotes = client.api.get('chat/emotes/global')
+        for emote in global_emotes['data']:
+            ttv += add_ttv_emote(emote)
+    except:
+        print("Error loading Twitch global emotes")
+
+    # Get twitch channel emotes
+    try:
+        channel_emotes = client.api.get('chat/emotes', params={'broadcaster_id': video_info.user_id})
+        for emote in channel_emotes['data']:
+            ttv += add_ttv_emote(emote)
+    except:
+        print("Error loading Twitch channel emotes")
 
     print("\nFound {} available emotes:".format(len(chat_emotes)))
     print("\nTTV: {}\nBTTV: {}\nFFZ: {}\n".format(ttv, bttv, ffz))
