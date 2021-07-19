@@ -274,9 +274,8 @@ class Ui(QMainWindow):
                     gif.setMovie(movie)
                     movie.start()
 
-                    text = QLabel()
+                    text = QLabel(util.wrap_text(name))
                     text.setAlignment(Qt.AlignHCenter)
-                    text.setText(name)
                     text.setTextInteractionFlags(Qt.TextSelectableByMouse)
 
                     vbox.addWidget(gif)

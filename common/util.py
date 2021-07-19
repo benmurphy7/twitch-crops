@@ -25,7 +25,6 @@ def link_time_to_timestamp(link_time):
     return link_time.replace("h", ":").replace("m", ":").replace("s", "")
 
 
-
 def link_time_to_seconds(link_time):
     return get_seconds(link_time_to_timestamp(link_time))
 
@@ -122,3 +121,16 @@ def apply_filter(filter, emotes, multi_emotes):
                 matches.append(emote)
                 break
     return matches
+
+
+def wrap_text(text):
+    wrapped = ''
+    i = 0
+    for char in text:
+        i += 1
+        if i > 20:
+            wrapped += '\n'
+            i = 0
+        wrapped += char
+
+    return wrapped
