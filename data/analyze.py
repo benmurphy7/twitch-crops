@@ -1,5 +1,6 @@
 import warnings
 import webbrowser
+from datetime import timedelta
 from textwrap import wrap
 
 import matplotlib.pyplot as plt
@@ -11,6 +12,8 @@ from scipy.signal import find_peaks
 
 from common import util
 
+clip_margin = 0
+emote_avg = 0
 
 def track_emotes(parsed, emotes, window_size, filters=None):
     if filters is None:
@@ -126,10 +129,16 @@ def track_emotes(parsed, emotes, window_size, filters=None):
     stats["avg_messages"] = total_messages / total_windows
     stats["avg_emotes"] = total_emotes / total_windows
 
+    global emote_avg
+    emote_avg = total_emotes / total_windows
+
     return activity, log_emotes_list, None, stats
 
 
 def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, limit=0, offset=10):
+    global clip_margin
+    clip_margin = offset
+
     best_emote_times = []
     best_msg_times = []
     best_labels = []
@@ -228,6 +237,8 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
 
     for ax in axes:
         ax.get_xaxis().set_ticks([])
+        ax.set_axisbelow(True)
+        ax.grid()
         #ax.get_xaxis().set_ticks(generate_ticks(messages_x, 100))
         #ax.get_xaxis().set_ticks(np.arange(0, len(messages_x), 100))
 
@@ -291,6 +302,16 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
             fig.canvas.draw()
             link_secs = util.get_seconds(timestamp) - offset
             webbrowser.open(util.timestamp_url(video_info.id, link_secs), new=0, autoraise=True)
+
+            """
+            # Output to easily copy clip start/end
+            print("Start time: {}".format(util.strfdelta(timedelta(0, link_secs), '%H:%M:%S')))
+            # Add extra time for extended reactions
+            print("Start time: {}".format(util.strfdelta(timedelta(0, link_secs + (offset * 2)), '%H:%M:%S')))
+            # Reaction score - relative score (reaction score / avg emotes per window)
+            print("{}-{:.2f}-".format(e_y[ind], e_y[ind] / emote_avg))
+            """
+
         except Exception as e:
             # Ignore error for now... not breaking functionality
             # print(e)
