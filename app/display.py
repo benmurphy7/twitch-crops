@@ -40,6 +40,8 @@ class Ui(QMainWindow):
         self.vodEntry.activated.connect(self.update_stream_info)
         self.vodEntry.setCurrentText('')
 
+        self.singleEmotesCheckbox
+
         qInstallMessageHandler(self.handle_msg)
 
     def disable_button(self, button):

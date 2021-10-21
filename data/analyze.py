@@ -1,6 +1,5 @@
 import warnings
 import webbrowser
-from datetime import timedelta
 from textwrap import wrap
 
 import matplotlib.pyplot as plt
@@ -10,6 +9,7 @@ import twitch
 from matplotlib.backend_bases import PickEvent
 from scipy.signal import find_peaks
 
+from app import display
 from common import util
 
 clip_margin = 0
@@ -102,17 +102,28 @@ def track_emotes(parsed, emotes, window_size, filters=None):
 
         message_count += 1
 
-        # TODO: Make this configurable
+        tokens = message.split(" ")
+
+        # TODO: Make this configurable (spam filtering)
         # Ignore lines with multiple emote instances (Generally spam, reactions are single emotes)
-        if len(message.split(" ")) == 1:
-            for emote in log_emotes_list:
-                if emote in message:
-                    cleaned = message.replace(emote, "", 1)
-                    # Message contains more than a single emote - ignore
-                    if cleaned != "":
-                        continue
-                    util.add_value(window_data, emote, 1, timestamp)
-                    total_emotes += 1
+        single_emotes_only = display.window.singleEmotesCheckbox.isChecked()
+
+        if single_emotes_only:
+            if len(tokens) == 1:
+                for emote in log_emotes_list:
+                    if emote in message:
+                        cleaned = message.replace(emote, "", 1)
+                        # Message contains more than emote name - ignore
+                        if cleaned != "":
+                            continue
+                        util.add_value(window_data, emote, 1, timestamp)
+                        total_emotes += 1
+        else:
+            for token in tokens:
+                for emote in log_emotes_list:
+                    if emote in token:
+                        util.add_value(window_data, emote, 1, timestamp)
+                        total_emotes += 1
         """
         # Count all unique emotes - analysis is too slow
         for emote in log_emotes_list:
