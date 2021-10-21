@@ -99,7 +99,10 @@ def timestamp_url(video_id, secs):
 
 
 def filter_match(filter, string):
-    if "\"" in filter:
+    if "\'" in filter:
+        if filter.replace("\'", "").lower() in string.lower():
+            return True
+    elif "\"" in filter:
         if filter.replace("\"", "") in string:
             return True
     elif filter == string:
