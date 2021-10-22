@@ -297,6 +297,9 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
     mpl_label(axes[0], best_emote_times, artists, activity, 0)
     mpl_label(axes[1], best_msg_times, artists, activity, 1)
 
+    axes[0].autoscale(False)
+    axes[1].autoscale(False)
+
     # TODO: Fix random "'PickEvent' object has no attribute 'ind'" error
     def on_pick(event: PickEvent):
         try:
