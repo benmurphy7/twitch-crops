@@ -15,23 +15,35 @@ from common import util
 clip_margin = 0
 emote_avg = 0
 
+
 def track_emotes(parsed, emotes, window_size, filters=None):
     if filters is None:
         filters = []
     log_emotes_list = []
 
+    valid_emotes_only = False
+    single_emotes_only = False
+
+    if display.window.validEmotesOnly.checkState(0) == 2:
+        valid_emotes_only = True
+        if display.window.singleEmotesOnly.checkState(0) == 2:
+            single_emotes_only = True
+
     # Check for all emotes containing any words in filters
     try:
         if filters:
             for filter in filters:
-                valid = False
-                for emote in emotes:
-                    if util.filter_match(filter, emote):
-                        valid = True
-                        log_emotes_list.append(emote)
-                if not valid:
-                    return None, None, filter, None
-
+                if valid_emotes_only:
+                    valid = False
+                    for emote in emotes:
+                        if util.filter_match(filter, emote):
+                            valid = True
+                            if emote not in log_emotes_list:
+                                log_emotes_list.append(emote)
+                    if not valid:
+                        return None, None, filter, None
+                else:
+                    log_emotes_list.append(filter)
         else:
             log_emotes_list = emotes
     except Exception as e:
@@ -104,10 +116,7 @@ def track_emotes(parsed, emotes, window_size, filters=None):
 
         tokens = message.split(" ")
 
-        # TODO: Make this configurable (spam filtering)
-        # Ignore lines with multiple emote instances (Generally spam, reactions are single emotes)
-        single_emotes_only = display.window.singleEmotesCheckbox.isChecked()
-
+        # Filter Matching
         if single_emotes_only:
             if len(tokens) == 1:
                 for emote in log_emotes_list:
@@ -119,11 +128,19 @@ def track_emotes(parsed, emotes, window_size, filters=None):
                         util.add_value(window_data, emote, 1, timestamp)
                         total_emotes += 1
         else:
-            for token in tokens:
+            if valid_emotes_only:
+                for token in tokens:
+                    for emote in log_emotes_list:
+                        if emote == token:
+                            util.add_value(window_data, emote, 1, timestamp)
+                            total_emotes += 1
+            else:
+                # TODO: Optimize contains search for phrases
                 for emote in log_emotes_list:
-                    if emote in token:
+                    if util.filter_match(emote, message):
                         util.add_value(window_data, emote, 1, timestamp)
                         total_emotes += 1
+
         """
         # Count all unique emotes - analysis is too slow
         for emote in log_emotes_list:
@@ -131,7 +148,7 @@ def track_emotes(parsed, emotes, window_size, filters=None):
                 util.add_value(window_data, emote, 1, timestamp)
         """
 
-    if len(log_emotes_list) == len(emotes):
+    if not filters:
         log_emotes_list = []
 
     stats["total_messages"] = total_messages
@@ -250,12 +267,12 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
         ax.get_xaxis().set_ticks([])
         ax.set_axisbelow(True)
         ax.grid()
-        #ax.get_xaxis().set_ticks(generate_ticks(messages_x, 100))
-        #ax.get_xaxis().set_ticks(np.arange(0, len(messages_x), 100))
+        # ax.get_xaxis().set_ticks(generate_ticks(messages_x, 100))
+        # ax.get_xaxis().set_ticks(np.arange(0, len(messages_x), 100))
 
-        #ax.set_xticklabels(ax.get_xticks(), rotation=45)
+        # ax.set_xticklabels(ax.get_xticks(), rotation=45)
 
-        #[l.set_visible(False) for (i, l) in enumerate(ax.get_xaxis().get_ticklabels()) if i % 100 != 0]
+        # [l.set_visible(False) for (i, l) in enumerate(ax.get_xaxis().get_ticklabels()) if i % 100 != 0]
 
     e_x = []
     e_y = []

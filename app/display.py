@@ -5,7 +5,7 @@ import time
 from PyQt5 import uic
 from PyQt5.QtCore import Qt, QProcess, QTimer, QObject, pyqtSignal, QThread, qInstallMessageHandler
 from PyQt5.QtGui import QMovie
-from PyQt5.QtWidgets import QApplication, QVBoxLayout, QFrame, QLabel, QMainWindow
+from PyQt5.QtWidgets import QApplication, QVBoxLayout, QFrame, QLabel, QMainWindow, QTreeWidget, QTreeWidgetItem
 
 from common import util, config
 from data import analyze, collect, images, logs
@@ -40,9 +40,21 @@ class Ui(QMainWindow):
         self.vodEntry.activated.connect(self.update_stream_info)
         self.vodEntry.setCurrentText('')
 
-        self.singleEmotesCheckbox
+        self.optionsTree: QTreeWidget
+        self.optionsTree.setFrameShape(QFrame.NoFrame)
+        self.optionsTree.expandAll()
+        self.optionsTree.setRootIsDecorated(False)
+        # Disable children if parent is unchecked
+        self.optionsTree.itemChanged.connect(self.set_child_states)
+
+        self.validEmotesOnly: QTreeWidgetItem = self.optionsTree.topLevelItem(0)
+        self.singleEmotesOnly: QTreeWidgetItem = self.validEmotesOnly.child(0)
 
         qInstallMessageHandler(self.handle_msg)
+
+    def set_child_states(self, parent: QTreeWidgetItem):
+        for index in range(0, parent.childCount()):
+            parent.child(index).setDisabled(not parent.checkState(0))
 
     def disable_button(self, button):
         button.setDisabled(False)
@@ -227,10 +239,28 @@ class Ui(QMainWindow):
 
     def get_filter_list(self):
         filter_list = []
-        filters = self.filterText.toPlainText().split()
-        # Remove duplicates
+        markers = ["\"", "\'"]
+        filter_text = self.filterText.toPlainText()
+
+        # Extract text between markers
+        for marker in markers:
+            filter_text = self.extract_bounded_text(filter_list, filter_text, marker)
+
+        # Split remaining text
+        filters = filter_text.split()
+
+        # Avoid duplicates
         [filter_list.append(x) for x in filters if x not in filter_list]
         return filter_list
+
+    def extract_bounded_text(self, output_list, text, delimiter):
+        inner_text_list = text.split(delimiter)[1::2]
+        for inner_text in inner_text_list:
+            extracted_text = delimiter + inner_text + delimiter
+            text = text.replace(extracted_text, "")
+            if extracted_text not in output_list:
+                output_list.append(extracted_text)
+        return text
 
     def set_search_timer(self):
         self.search_timer.start(self.search_timer_length)

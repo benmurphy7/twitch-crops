@@ -107,6 +107,7 @@ def filter_match(filter, string):
             return True
     elif filter == string:
         return True
+
     return False
 
 
