@@ -93,8 +93,8 @@ def track_emotes(parsed, emotes, window_size, filters=None):
             # TODO: Assign top count to window with highest message count?
             # TODO: Find max chat message counts and shift top emotes to that peak if close?
             if top_emote is prev_emote:
-                if total_value > emote_max:
-                    emote_max = total_value
+                if top_count > emote_max:
+                    emote_max = top_count
                     activity[previous_timestamp] = [[top_emote, 0, 0], [first_message_timestamp, message_count]]
                 else:
                     # Flatten non-max window
@@ -184,7 +184,7 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
         messages_x.append(entry[1][0])
         messages_y.append(entry[1][1])
         emote_act_x.append(entry[1][0])
-        emote_act_y.append(entry[0][2])
+        emote_act_y.append(entry[0][1])
 
     # Emote Reactions
 
@@ -193,7 +193,7 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
         # Sort by reactions
 
         # Reference -> item : (first_emote_timestamp, [[label, value, total_val], [window_timestamp, message_count]])
-        sorted_items = sorted(list(activity.items()), key=lambda x: x[1][0][2], reverse=True)
+        sorted_items = sorted(list(activity.items()), key=lambda x: x[1][0][1], reverse=True)
         for item in sorted_items:
             if len(best_emote_times) < limit:
                 emote = item[1][0][0]
@@ -282,7 +282,7 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
     for time in emotes_x:
         entry = activity[time]
         e_x.append(entry[1][0])
-        e_y.append(entry[0][2])
+        e_y.append(entry[0][1])
 
     for time in best_msg_times:
         entry = activity[time]
