@@ -8,7 +8,7 @@ import twitch
 
 chat_emotes = {}
 client: twitch.Helix = None
-video_info: twitch.helix.Video = None
+video_info: twitch.Helix.video = None
 
 
 def get_client_info(file):

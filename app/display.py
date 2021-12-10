@@ -39,6 +39,7 @@ class Ui(QMainWindow):
         self.update_ids()
         self.vodEntry.activated.connect(self.update_stream_info)
         self.vodEntry.setCurrentText('')
+        self.vodEntry.setFocus()
 
         self.optionsTree: QTreeWidget
         self.optionsTree.setFrameShape(QFrame.NoFrame)
