@@ -36,7 +36,7 @@ class ClickInfo(mpld3.plugins.PluginBase):
     ClickInfo.prototype.draw = function(){
         var obj = mpld3.get_element(this.props.id);
         urls = this.props.urls;
-        obj.elements().on("mousedown",
+        obj.elements().on("mousedown.callout",
                           function(d, i){ 
                             window.open(urls[i], 'TwitchCrops')});
     }
