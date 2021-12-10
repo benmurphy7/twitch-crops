@@ -2,11 +2,16 @@ import warnings
 import webbrowser
 from textwrap import wrap
 
+import matplotlib
 import matplotlib.pyplot as plt
 import mplcursors
+import mpld3 as mpld3
 import numpy as np
 import twitch
 from matplotlib.backend_bases import PickEvent
+from mpld3 import plugins, utils
+from mpld3.plugins import PluginBase
+from mpld3.utils import get_id
 from scipy.signal import find_peaks
 
 from app import display
@@ -14,6 +19,129 @@ from common import util
 
 clip_margin = 0
 emote_avg = 0
+
+
+class ClickInfo(mpld3.plugins.PluginBase):
+    """mpld3 Plugin for getting info on click        """
+
+    JAVASCRIPT = """
+    mpld3.register_plugin("clickinfo", ClickInfo);
+    ClickInfo.prototype = Object.create(mpld3.Plugin.prototype);
+    ClickInfo.prototype.constructor = ClickInfo;
+    ClickInfo.prototype.requiredProps = ["id", "urls"];
+    function ClickInfo(fig, props){
+        mpld3.Plugin.call(this, fig, props);
+    };
+
+    ClickInfo.prototype.draw = function(){
+        var obj = mpld3.get_element(this.props.id);
+        urls = this.props.urls;
+        obj.elements().on("mousedown",
+                          function(d, i){ 
+                            window.open(urls[i], 'TwitchCrops')});
+    }
+    """
+    def __init__(self, points, urls):
+        self.points = points
+        self.urls = urls
+        if isinstance(points, matplotlib.lines.Line2D):
+            suffix = "pts"
+        else:
+            suffix = None
+        self.dict_ = {"type": "clickinfo",
+                      "id": mpld3.utils.get_id(points, suffix),
+                      "urls": urls}
+
+
+class PointHTMLTooltip(PluginBase):
+    """A Plugin to enable an HTML tooltip:
+    formated text which hovers over points.
+
+    Parameters
+    ----------
+    points : matplotlib Collection or Line2D object
+        The figure element to apply the tooltip to
+    labels : list
+        The labels for each point in points, as strings of unescaped HTML.
+    targets : list
+        The urls that each point will open when clicked.
+    hoffset, voffset : integer, optional
+        The number of pixels to offset the tooltip text.  Default is
+        hoffset = 0, voffset = 10
+    css : str, optional
+        css to be included, for styling the label html if desired
+    Examples
+    --------
+    >>> import matplotlib.pyplot as plt
+    >>> from mpld3 import fig_to_html, plugins
+    >>> fig, ax = plt.subplots()
+    >>> points = ax.plot(range(10), 'o')
+    >>> labels = ['<h1>{title}</h1>'.format(title=i) for i in range(10)]
+    >>> plugins.connect(fig, PointHTMLTooltip(points[0], labels))
+    >>> fig_to_html(fig)
+    """
+
+    JAVASCRIPT = """
+    mpld3.register_plugin("htmltooltip", HtmlTooltipPlugin);
+    HtmlTooltipPlugin.prototype = Object.create(mpld3.Plugin.prototype);
+    HtmlTooltipPlugin.prototype.constructor = HtmlTooltipPlugin;
+    HtmlTooltipPlugin.prototype.requiredProps = ["id"];
+    HtmlTooltipPlugin.prototype.defaultProps = {labels:null,
+                                                target:null,
+                                                hoffset:0,
+                                                voffset:10,
+                                                targets:null};
+    function HtmlTooltipPlugin(fig, props){
+        mpld3.Plugin.call(this, fig, props);
+    };
+
+    HtmlTooltipPlugin.prototype.draw = function(){
+        var obj = mpld3.get_element(this.props.id);
+        var labels = this.props.labels;
+        var targets = this.props.targets;
+        var tooltip = d3.select("body").append("div")
+            .attr("class", "mpld3-tooltip")
+            .style("position", "absolute")
+            .style("z-index", "10")
+            .style("visibility", "hidden");
+
+        obj.elements()
+            .on("mouseover", function(d, i){
+                tooltip.html(labels[i])
+                    .style("visibility", "visible");
+            })
+            .on("mousemove", function(d, i){
+                tooltip
+                .style("top", d3.event.pageY + this.props.voffset + "px")
+                .style("left",d3.event.pageX + this.props.hoffset + "px");
+            }.bind(this))
+            .on("mousedown.callout", function(d, i){
+                window.open(targets[i],'TwitchCrops');
+            })
+            .on("mouseout", function(d, i){
+                tooltip.style("visibility", "hidden");
+            });
+    };
+    """
+
+    def __init__(self, points, labels=None, targets=None,
+                 hoffset=0, voffset=10, css=None):
+        self.points = points
+        self.labels = labels
+        self.targets = targets
+        self.voffset = voffset
+        self.hoffset = hoffset
+        self.css_ = css or ""
+        if isinstance(points, matplotlib.lines.Line2D):
+            suffix = "pts"
+        else:
+            suffix = None
+        self.dict_ = {"type": "htmltooltip",
+                      "id": get_id(points, suffix),
+                      "labels": labels,
+                      "targets": targets,
+                      "hoffset": hoffset,
+                      "voffset": voffset}
 
 
 def track_emotes(parsed, emotes, window_size, filters=None):
@@ -290,8 +418,8 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
         m_y.append(entry[1][1])
 
     # Draw selectable scatter plots
-    axes[0].scatter(e_x, e_y, picker=True, marker='d', c='gold', s=50, zorder=1)
-    axes[1].scatter(m_x, m_y, picker=True, marker='o', c='blue', s=30, zorder=1)
+    top_points = axes[0].scatter(e_x, e_y, picker=True, marker='d', c='gold', s=50, zorder=1)
+    bot_points = axes[1].scatter(m_x, m_y, picker=True, marker='o', c='blue', s=30, zorder=1)
 
     filter_set = ""
     if filters:
@@ -349,6 +477,49 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
             pass
 
     fig.canvas.mpl_connect('pick_event', on_pick)
+
+
+    # Render for webpage
+    top_urls = []
+    bot_urls = []
+    top_labels = []
+    bot_labels = []
+    try:
+        for idx, point in enumerate(e_x):
+            timestamp = emotes_x[idx]
+            link_secs = util.get_seconds(timestamp) - offset
+            top_urls.append(util.timestamp_url(video_info.id, link_secs))
+
+            top_labels.append(set_text(best_emote_times, activity, idx, 0))
+
+        for idx, point in enumerate(m_x):
+            timestamp = best_msg_times[idx]
+            link_secs = util.get_seconds(timestamp) - offset
+            bot_urls.append(util.timestamp_url(video_info.id, link_secs))
+
+            bot_labels.append(set_text(best_msg_times, activity, idx, 1))
+
+        #plugins.connect(fig, PointHTMLTooltip(top_points, top_labels, top_urls))
+        plugins.connect(fig, ClickInfo(top_points, top_urls))
+        plugins.connect(fig, plugins.PointLabelTooltip(top_points, top_labels))
+
+        #plugins.connect(fig, PointHTMLTooltip(bot_points, bot_labels, bot_urls))
+        plugins.connect(fig, ClickInfo(bot_points, bot_urls))
+        plugins.connect(fig, plugins.PointLabelTooltip(bot_points, bot_labels))
+
+
+    except Exception as e:
+        print(e)
+
+    #plugins.connect(fig, ClickInfo(top_points, top_urls))
+
+    try:
+        html_str = mpld3.fig_to_html(fig)
+        Html_file = open("index.html", "w")
+        Html_file.write(html_str)
+        Html_file.close()
+    except Exception as e:
+        print(e)
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
