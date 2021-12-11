@@ -113,8 +113,8 @@ class PointHTMLTooltip(PluginBase):
 
         obj.elements()
             .on("mouseover", function(d, i){
-                tooltip.html(labels[i])
-                    .style("visibility", "visible");
+                /*tooltip.html(labels[i])
+                    .style("visibility", "visible");*/
             })
             .on("mousemove", function(d, i){
                 tooltip
@@ -487,19 +487,26 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
     # Render for webpage
 
     css = """
-    path.clicked {
-        color: #ff0000;
+    table
+    {
+      border-collapse: collapse;
     }
-    th {
-       color: #ff0000;
-       background - color: #000000;
+    th
+    {
+      color: #ffffff;
+      background-color: #000000;
     }
     td
     {
-      background-color: # cccccc;
+      background-color: #cccccc;
+    }
+    table, th, td
+    {
+      font-family:Arial, Helvetica, sans-serif;
+      border: 1px solid black;
+      text-align: right;
     }
     """
-
 
     top_urls = []
     bot_urls = []
@@ -520,14 +527,19 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
 
             bot_labels.append(set_text(best_msg_times, activity, idx, 1))
 
-        # plugins.connect(fig, PointHTMLTooltip(top_points, top_labels, top_urls))
-        plugins.connect(fig, ClickInfo(top_points, top_urls, css))
-        plugins.connect(fig, plugins.PointLabelTooltip(top_points, top_labels, css))
+        # Works for multiple point sets, but tool tip isn't formatted well
+        plugins.connect(fig, PointHTMLTooltip(top_points, top_labels, top_urls))
+        plugins.connect(fig, PointHTMLTooltip(bot_points, bot_labels, bot_urls))
+        plugins.connect(fig, plugins.PointLabelTooltip(top_points, top_labels))
+        plugins.connect(fig, plugins.PointLabelTooltip(bot_points, bot_labels))
 
-        # plugins.connect(fig, PointHTMLTooltip(bot_points, bot_labels, bot_urls))
-        plugins.connect(fig, ClickInfo(bot_points, bot_urls, css))
-        plugins.connect(fig, plugins.PointLabelTooltip(bot_points, bot_labels, css))
+        # Broken (won't map multiple point sets correctly across multiple ClickInfo objects)
+        #plugins.connect(fig, ClickInfo(top_points, top_urls))
+        #plugins.connect(fig, ClickInfo(bot_points, bot_urls))
 
+        #Broken (maximum recursion depth exceeded
+        #plugins.connect(fig, plugins.PointClickableHTMLTooltip(top_points, top_labels, top_urls))
+        #plugins.connect(fig, plugins.PointClickableHTMLTooltip(bot_points, bot_labels, bot_urls))
 
     except Exception as e:
         print(e)
