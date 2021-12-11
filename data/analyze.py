@@ -31,6 +31,9 @@ class ClickInfo(mpld3.plugins.PluginBase):
     ClickInfo.prototype.requiredProps = ["id", "urls"];
     function ClickInfo(fig, props){
         mpld3.Plugin.call(this, fig, props);
+        mpld3.insert_css("#" + fig.figid + " path.clicked",
+                         {"fill-opacity": "0.3 !important",
+                          "stroke-opacity": "0.3 !important"});
     };
 
     ClickInfo.prototype.draw = function(){
@@ -38,12 +41,15 @@ class ClickInfo(mpld3.plugins.PluginBase):
         urls = this.props.urls;
         obj.elements().on("mousedown.callout",
                           function(d, i){ 
+                            d3.select(this).classed("clicked", true);
                             window.open(urls[i], 'TwitchCrops')});
     }
     """
-    def __init__(self, points, urls):
+
+    def __init__(self, points, urls, css=None):
         self.points = points
         self.urls = urls
+        self.css_ = css or ""
         if isinstance(points, matplotlib.lines.Line2D):
             suffix = "pts"
         else:
@@ -478,8 +484,23 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
 
     fig.canvas.mpl_connect('pick_event', on_pick)
 
-
     # Render for webpage
+
+    css = """
+    path.clicked {
+        color: #ff0000;
+    }
+    th {
+       color: #ff0000;
+       background - color: #000000;
+    }
+    td
+    {
+      background-color: # cccccc;
+    }
+    """
+
+
     top_urls = []
     bot_urls = []
     top_labels = []
@@ -499,19 +520,19 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
 
             bot_labels.append(set_text(best_msg_times, activity, idx, 1))
 
-        #plugins.connect(fig, PointHTMLTooltip(top_points, top_labels, top_urls))
-        plugins.connect(fig, ClickInfo(top_points, top_urls))
-        plugins.connect(fig, plugins.PointLabelTooltip(top_points, top_labels))
+        # plugins.connect(fig, PointHTMLTooltip(top_points, top_labels, top_urls))
+        plugins.connect(fig, ClickInfo(top_points, top_urls, css))
+        plugins.connect(fig, plugins.PointLabelTooltip(top_points, top_labels, css))
 
-        #plugins.connect(fig, PointHTMLTooltip(bot_points, bot_labels, bot_urls))
-        plugins.connect(fig, ClickInfo(bot_points, bot_urls))
-        plugins.connect(fig, plugins.PointLabelTooltip(bot_points, bot_labels))
+        # plugins.connect(fig, PointHTMLTooltip(bot_points, bot_labels, bot_urls))
+        plugins.connect(fig, ClickInfo(bot_points, bot_urls, css))
+        plugins.connect(fig, plugins.PointLabelTooltip(bot_points, bot_labels, css))
 
 
     except Exception as e:
         print(e)
 
-    #plugins.connect(fig, ClickInfo(top_points, top_urls))
+    # plugins.connect(fig, ClickInfo(top_points, top_urls))
 
     try:
         html_str = mpld3.fig_to_html(fig)
