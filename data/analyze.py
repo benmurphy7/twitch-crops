@@ -99,6 +99,9 @@ class PointHTMLTooltip(PluginBase):
                                                 targets:null};
     function HtmlTooltipPlugin(fig, props){
         mpld3.Plugin.call(this, fig, props);
+        mpld3.insert_css("#" + fig.figid + " path.clicked",
+                         {"fill-opacity": "0.3 !important",
+                          "stroke-opacity": "0.3 !important"});
     };
 
     HtmlTooltipPlugin.prototype.draw = function(){
@@ -122,6 +125,7 @@ class PointHTMLTooltip(PluginBase):
                 .style("left",d3.event.pageX + this.props.hoffset + "px");
             }.bind(this))
             .on("mousedown.callout", function(d, i){
+            d3.select(this).classed("clicked", true);
                 window.open(targets[i],'TwitchCrops');
             })
             .on("mouseout", function(d, i){
@@ -537,7 +541,7 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
         #plugins.connect(fig, ClickInfo(top_points, top_urls))
         #plugins.connect(fig, ClickInfo(bot_points, bot_urls))
 
-        #Broken (maximum recursion depth exceeded
+        #Broken (maximum recursion depth exceeded)
         #plugins.connect(fig, plugins.PointClickableHTMLTooltip(top_points, top_labels, top_urls))
         #plugins.connect(fig, plugins.PointClickableHTMLTooltip(bot_points, bot_labels, bot_urls))
 
@@ -577,9 +581,10 @@ def generate_ticks(x_data, interval):
 
 
 def set_text(times, activity, index, plot):
-    text = times[index]
+    text = ""
     if plot == 0:
-        text += "\n" + activity[times[index]][0][0]
+        text += activity[times[index]][0][0] + "\n"
+    text += times[index]
     return text
 
 
