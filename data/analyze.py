@@ -32,8 +32,7 @@ class ClickInfo(mpld3.plugins.PluginBase):
     function ClickInfo(fig, props){
         mpld3.Plugin.call(this, fig, props);
         mpld3.insert_css("#" + fig.figid + " path.clicked",
-                         {"fill-opacity": "0.3 !important",
-                          "stroke-opacity": "0.3 !important"});
+                         {"fill": "black"});
     };
 
     ClickInfo.prototype.draw = function(){
@@ -99,9 +98,16 @@ class PointHTMLTooltip(PluginBase):
                                                 targets:null};
     function HtmlTooltipPlugin(fig, props){
         mpld3.Plugin.call(this, fig, props);
+        mpld3.insert_css("#" + fig.figid + " path.hovered",
+                        {"fill-opacity": "0.5 !important",
+                        "stroke-opacity": "1.0 !important",
+                        "stroke": "black !important"});
         mpld3.insert_css("#" + fig.figid + " path.clicked",
-                         {"fill-opacity": "0.3 !important",
-                          "stroke-opacity": "0.3 !important"});
+                        {"fill-opacity": "0.3 !important",
+                        "stroke-opacity": "1.0 !important",
+                        "fill": "red !important",
+                        "stroke": "red !important"});
+                         
     };
 
     HtmlTooltipPlugin.prototype.draw = function(){
@@ -115,7 +121,9 @@ class PointHTMLTooltip(PluginBase):
             .style("visibility", "hidden");
 
         obj.elements()
-            .on("mouseover", function(d, i){
+        //"mouseover"
+            .on("mouseenter", function(d, i){
+             d3.select(this).classed("hovered", true);
                 /*tooltip.html(labels[i])
                     .style("visibility", "visible");*/
             })
@@ -125,11 +133,13 @@ class PointHTMLTooltip(PluginBase):
                 .style("left",d3.event.pageX + this.props.hoffset + "px");
             }.bind(this))
             .on("mousedown.callout", function(d, i){
-            d3.select(this).classed("clicked", true);
+                d3.select(this).classed("clicked", true);
                 window.open(targets[i],'TwitchCrops');
             })
-            .on("mouseout", function(d, i){
-                tooltip.style("visibility", "hidden");
+            //"mouseout"
+            .on("mouseleave", function(d, i){
+            d3.select(this).classed("hovered", false);
+                /*tooltip.style("visibility", "hidden");*/
             });
     };
     """
@@ -397,10 +407,6 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
     fig.canvas.set_window_title(video_info.user_name + " - " + video_info.title)
     fig.tight_layout(pad=3.0)
 
-    axes[0].plot(emote_act_x, emote_act_y, picker=True, c='green', zorder=0)
-
-    axes[1].plot(messages_x, messages_y, picker=True, c='orange', zorder=0)
-
     for ax in axes:
         ax.get_xaxis().set_ticks([])
         ax.set_axisbelow(True)
@@ -411,6 +417,9 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
         # ax.set_xticklabels(ax.get_xticks(), rotation=45)
 
         # [l.set_visible(False) for (i, l) in enumerate(ax.get_xaxis().get_ticklabels()) if i % 100 != 0]
+
+    axes[0].plot(emote_act_x, emote_act_y, picker=True, c='green', zorder=0)
+    axes[1].plot(messages_x, messages_y, picker=True, c='orange', zorder=0)
 
     e_x = []
     e_y = []
@@ -489,29 +498,6 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
     fig.canvas.mpl_connect('pick_event', on_pick)
 
     # Render for webpage
-
-    css = """
-    table
-    {
-      border-collapse: collapse;
-    }
-    th
-    {
-      color: #ffffff;
-      background-color: #000000;
-    }
-    td
-    {
-      background-color: #cccccc;
-    }
-    table, th, td
-    {
-      font-family:Arial, Helvetica, sans-serif;
-      border: 1px solid black;
-      text-align: right;
-    }
-    """
-
     top_urls = []
     bot_urls = []
     top_labels = []
