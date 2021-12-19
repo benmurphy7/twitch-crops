@@ -214,7 +214,7 @@ class Ui(QMainWindow):
     def harvest(self):
         self.harvestBtn.setDisabled(True)
         self.harvestBtn.repaint()
-        filters = self.get_filter_list()
+        filter_list = util.get_filter_list(self.filterText.toPlainText())
         if self.harvestBtn.text() == "Download":
             self.update_status("Downloading [{}] ...".format(self.video_id))
             self.download_process()
@@ -227,8 +227,17 @@ class Ui(QMainWindow):
                 self.harvestBtn.repaint()
                 return
             self.update_status("Analyzing ...")
-            data, valid, invalid, stats = logs.parse_vod_log(self.video_id, self.chat_emotes, filters,
-                                                        int(self.windowSize.text()))
+
+            valid_emotes_only = False
+            single_emotes_only = False
+            if window.validEmotesOnly.checkState(0) == 2:
+                valid_emotes_only = True
+                if window.singleEmotesOnly.checkState(0) == 2:
+                    single_emotes_only = True
+
+            data, valid, invalid, stats = logs.parse_vod_log(self.video_id, self.chat_emotes, filter_list,
+                                            int(self.windowSize.text()), valid_emotes_only, single_emotes_only)
+
             self.harvestBtn.setDisabled(False)
             self.harvestBtn.repaint()
             if invalid is None:
@@ -237,31 +246,6 @@ class Ui(QMainWindow):
                                         int(self.linkOffset.text()))
             else:
                 self.update_status("Error: ' {} ' is not a valid filter".format(invalid))
-
-    def get_filter_list(self):
-        filter_list = []
-        markers = ["\"", "\'"]
-        filter_text = self.filterText.toPlainText()
-
-        # Extract text between markers
-        for marker in markers:
-            filter_text = self.extract_bounded_text(filter_list, filter_text, marker)
-
-        # Split remaining text
-        filters = filter_text.split()
-
-        # Avoid duplicates
-        [filter_list.append(x) for x in filters if x not in filter_list]
-        return filter_list
-
-    def extract_bounded_text(self, output_list, text, delimiter):
-        inner_text_list = text.split(delimiter)[1::2]
-        for inner_text in inner_text_list:
-            extracted_text = delimiter + inner_text + delimiter
-            text = text.replace(extracted_text, "")
-            if extracted_text not in output_list:
-                output_list.append(extracted_text)
-        return text
 
     def set_search_timer(self):
         self.search_timer.start(self.search_timer_length)

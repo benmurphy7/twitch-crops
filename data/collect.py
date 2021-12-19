@@ -6,6 +6,7 @@ print("Importing requests...")
 import requests as req
 import twitch
 
+#TODO: Store data in object
 chat_emotes = {}
 client: twitch.Helix = None
 video_info: twitch.Helix.video = None

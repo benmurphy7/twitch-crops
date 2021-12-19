@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<form method="post" action="/chart">
+    <div class="form-group">
+        <label for="title">Video URL</label>
+        <input type="text" name="video_id"
+               placeholder="https://www.twitch.tv/videos/1234567890" class="form-control"
+               value="https://www.twitch.tv/videos/1231804940"/>
+    </div>
+    <!--
+    <div class="form-group">
+        <label for="content">Filters</label>
+        <textarea name="filters" placeholder="'LUL' 'KEK' ..."
+                  class="form-control">{{ request.form['filters'] }}</textarea>
+    </div>
+    <div class="form-group">
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </div>
+    -->
+    <div class="form-group">
+                <button type="submit" class="btn btn-primary">Analyze</button>
+    </div>
+</form>
+{% endblock %}

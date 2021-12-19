@@ -64,6 +64,10 @@ def parse_message(line):
     return message.strip('\n')
 
 
+def parse_video_id(url):
+    return url.rsplit('/', 1)[-1]
+
+
 def round_down(num, divisor):
     return num - (num % divisor)
 
@@ -96,6 +100,32 @@ def space_timestamp(timestamp):
 def timestamp_url(video_id, secs):
     url = "http://twitch.tv/videos/" + video_id + "?t=" + link_time(secs)
     return url
+
+
+def get_filter_list(filter_text):
+    filter_list = []
+    markers = ["\"", "\'"]
+
+    # Extract text between markers
+    for marker in markers:
+        filter_text = extract_bounded_text(filter_list, filter_text, marker)
+
+    # Split remaining text
+    filters = filter_text.split()
+
+    # Avoid duplicates
+    [filter_list.append(x) for x in filters if x not in filter_list]
+    return filter_list
+
+
+def extract_bounded_text(output_list, text, delimiter):
+    inner_text_list = text.split(delimiter)[1::2]
+    for inner_text in inner_text_list:
+        extracted_text = delimiter + inner_text + delimiter
+        text = text.replace(extracted_text, "")
+        if extracted_text not in output_list:
+            output_list.append(extracted_text)
+    return text
 
 
 def filter_match(filter, string):

@@ -164,18 +164,19 @@ class PointHTMLTooltip(PluginBase):
                       "voffset": voffset}
 
 
-def track_emotes(parsed, emotes, window_size, filters=None):
+def track_emotes(parsed, emotes, window_size, filters=None, valid_emotes_only=True, single_emotes_only=True):
     if filters is None:
         filters = []
     log_emotes_list = []
 
+    """
     valid_emotes_only = False
     single_emotes_only = False
-
     if display.window.validEmotesOnly.checkState(0) == 2:
         valid_emotes_only = True
         if display.window.singleEmotesOnly.checkState(0) == 2:
             single_emotes_only = True
+    """
 
     # Check for all emotes containing any words in filters
     try:
@@ -311,7 +312,7 @@ def track_emotes(parsed, emotes, window_size, filters=None):
     return activity, log_emotes_list, None, stats
 
 
-def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, limit=0, offset=10):
+def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, limit=0, offset=10, html=False):
     global clip_margin
     clip_margin = offset
 
@@ -536,17 +537,20 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
 
     # plugins.connect(fig, ClickInfo(top_points, top_urls))
 
-    try:
-        html_str = mpld3.fig_to_html(fig)
-        Html_file = open("index.html", "w")
-        Html_file.write(html_str)
-        Html_file.close()
-    except Exception as e:
-        print(e)
+    if html:
+        print("Creating html chart")
+        try:
+            html_str = mpld3.fig_to_html(fig)
+            html_file = open("templates/chart.html", "w")
+            html_file.write(html_str)
+            html_file.close()
+        except Exception as e:
+            print(e)
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        plt.show()
+    else:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            plt.show()
 
 
 def mpl_label(axis, times, artists, activity, plot):

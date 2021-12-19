@@ -43,11 +43,12 @@ def parse_log(log_path):
     return parsed
 
 
-def parse_vod_log(video_id, chat_emotes, custom_filters, window):
+def parse_vod_log(video_id, chat_emotes, custom_filters, window, valid_emotes_only=True, single_emotes_only=True):
     emotes_list = sorted(list(chat_emotes.keys()), key=len, reverse=True)
     log_path = get_log_path(video_id)
     parsed = parse_log(log_path)
-    return analyze.track_emotes(parsed, emotes_list, window, custom_filters)
+    return analyze.track_emotes(
+        parsed, emotes_list, window, custom_filters, valid_emotes_only=True, single_emotes_only=True)
 
 
 def log_end_time(video_id):

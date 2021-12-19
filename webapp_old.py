@@ -1,6 +1,7 @@
 # Importing flask module in the project is mandatory
 # An object of Flask class is our WSGI application.
-from flask import Flask
+from flask import Flask, render_template
+import ssl
 
 # Flask constructor takes the name of
 # current module (__name__) as argument.
@@ -20,4 +21,9 @@ def hello_world():
 if __name__ == '__main__':
     # run() method of Flask class runs the application
     # on the local development server.
-    app.run()
+    context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+    context.verify_mode = ssl.CERT_REQUIRED
+    #context.load_verify_locations("ca.crt")
+    context = ('twitchcrops_tv.crt', 'twitchcrops_tv.key')  # certificate and key files
+    #context = ('cert.pem', 'key.pem')  # certificate and key files
+    app.run(host='0.0.0.0', port=443, ssl_context=context)

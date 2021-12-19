@@ -1,0 +1,10 @@
+{% include 'index.html' %}
+{% include 'video_info.html' %}
+
+{% block content %}
+<form method="post" action="/chart">
+        <div class="form-group">
+                <button type="submit" class="btn btn-primary">Analyze</button>
+        </div>
+</form>
+{% endblock %}
