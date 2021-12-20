@@ -2,10 +2,10 @@ import gevent.monkey
 gevent.monkey.patch_all()
 
 import twitch
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, render_template_string
 import ssl
 
-from data import collect, logs, analyze
+from data import collect, logs, analyze, images
 from common import util
 
 # Flask constructor takes the name of
@@ -31,33 +31,78 @@ def index():
 @app.route('/chart', methods=('GET', 'POST'))
 def chart():
     if request.method == 'POST':
-        print(request.form)
         video_id = util.parse_video_id(request.form['video_id'])
-        print(video_id)
-        render_chart(video_id)
-    return render_template('chart.html')
+
+        video_info = {}
+        valid_id = collect.update_video_info(video_id)
+        video: twitch.Helix.video = collect.video_info
+
+        if not video_id or not valid_id:
+            print('Inavlid Video ID')
+            return
+
+        video_info['title'] = video.title
+        video_info['user_name'] = video.user_name
+        video_info['duration'] = util.space_timestamp(video.duration)
+
+        style_str = "<style>h2 {text-align: center;}</style>"
+        chart_title = "<h2>{} - {}</h2>".format(video.user_name, video.title)
+
+        html_str = render_chart(video_id)
+
+        html_str = style_str + chart_title + html_str
+
+
+    #return render_template('chart_view.html', video_info=video_info)
+    return render_template_string(html_str,video_info=video_info)
 
 
 def display_video_info(video_id):
     video_info = {}
-    collect.update_video_info(video_id)
+    valid_id = collect.update_video_info(video_id)
     video: twitch.Helix.video = collect.video_info
+
+    if not video_id or not valid_id:
+        print('Inavlid Video ID')
+        return
 
     video_info['title'] = video.title
     video_info['user_name'] = video.user_name
     video_info['duration'] = util.space_timestamp(video.duration)
 
+
+
     return render_template('video_analysis.html', video_info=video_info)
 
 
+def display_emotes(video_id):
+    chat_emotes = collect.get_available_emotes()
+
+    if chat_emotes is None:
+        print('Inavlid Video ID')
+        return
+
+    urls = images.missing_emotes(chat_emotes)
+
+    try:
+        if urls:
+            #self.update_status("Downloading images ...")
+            images.get_images(urls)
+    except Exception as e:
+        print(e)
+
+
 def render_chart(video_id, filter_list=[]):
+    html_str = ""
     collect.update_video_info(video_id)
     chat_emotes = collect.get_available_emotes()
     data, valid, invalid, stats = logs.parse_vod_log(video_id, chat_emotes, filter_list, 5)
     if invalid is None:
-        analyze.plot_video_data(collect.video_info, data, valid, stats, 50, 10, True)
+        html_str = analyze.plot_video_data(collect.video_info, data, valid, stats, 50, 10, True)
     else:
        print("Error: ' {} ' is not a valid filter".format(invalid))
+
+    return html_str
 
 
 if __name__ == '__main__':

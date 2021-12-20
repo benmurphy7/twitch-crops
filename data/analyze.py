@@ -403,10 +403,16 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
 
     emotes_x = best_emote_times
 
-    plt.ion()
     fig, axes = plt.subplots(2, figsize=(15, 8))
-    fig.canvas.set_window_title(video_info.user_name + " - " + video_info.title)
     fig.tight_layout(pad=3.0)
+
+    plot_title = video_info.user_name + " - " + video_info.title
+
+    if not html:
+        plt.ion()
+        fig.canvas.set_window_title(plot_title)
+    else:
+        plt.title(plot_title)
 
     for ax in axes:
         ax.get_xaxis().set_ticks([])
@@ -453,8 +459,8 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
     else:
         filter_set = "All emotes"
 
-    axes[0].title.set_text("\n".join(wrap("Top CROPS: " + filter_set)))
-    axes[1].title.set_text("Message Activity")
+    axes[0].set_title("\n".join(wrap("Top CROPS: " + filter_set)), fontsize=18, fontweight="bold")
+    axes[1].set_title("Message Activity", fontsize=18, fontweight="bold")
 
     artists = []
 
@@ -541,9 +547,10 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
         print("Creating html chart")
         try:
             html_str = mpld3.fig_to_html(fig)
-            html_file = open("templates/chart.html", "w")
-            html_file.write(html_str)
-            html_file.close()
+            return html_str
+            #html_file = open("templates/chart.html", "w")
+            #html_file.write(html_str)
+            #html_file.close()
         except Exception as e:
             print(e)
 

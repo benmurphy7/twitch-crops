@@ -1,0 +1,11 @@
+<style>
+h2 {
+    text-align: center;
+}
+</style>
+
+{% block content %}
+<h2>{{ video_info['user_name'] }} - {{ video_info['title'] }}</h2>
+{% endblock %}
+
+{% include 'chart.html' %}
