@@ -19,9 +19,8 @@ app = Flask(__name__)
 @app.route('/', methods=('GET', 'POST'))
 def index():
     if request.method == 'POST':
-        print(request.form)
+        #request.args.get('a', 0, type=int)
         video_id = util.parse_video_id(request.form['video_id'])
-        print(video_id)
         return display_video_info(video_id)
 
     else:

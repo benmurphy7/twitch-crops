@@ -411,8 +411,6 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
     if not html:
         plt.ion()
         fig.canvas.set_window_title(plot_title)
-    else:
-        plt.title(plot_title)
 
     for ax in axes:
         ax.get_xaxis().set_ticks([])
@@ -459,7 +457,12 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
     else:
         filter_set = "All emotes"
 
-    axes[0].set_title("\n".join(wrap("Top CROPS: " + filter_set)), fontsize=18, fontweight="bold")
+    top_title = "\n".join(wrap("Top CROPS: " + filter_set))
+
+    # if html:
+    #    top_title = plot_title + "\n" + top_title
+
+    axes[0].set_title(top_title, fontsize=18, fontweight="bold")
     axes[1].set_title("Message Activity", fontsize=18, fontweight="bold")
 
     artists = []
@@ -531,12 +534,12 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
         plugins.connect(fig, plugins.PointLabelTooltip(bot_points, bot_labels))
 
         # Broken (won't map multiple point sets correctly across multiple ClickInfo objects)
-        #plugins.connect(fig, ClickInfo(top_points, top_urls))
-        #plugins.connect(fig, ClickInfo(bot_points, bot_urls))
+        # plugins.connect(fig, ClickInfo(top_points, top_urls))
+        # plugins.connect(fig, ClickInfo(bot_points, bot_urls))
 
-        #Broken (maximum recursion depth exceeded)
-        #plugins.connect(fig, plugins.PointClickableHTMLTooltip(top_points, top_labels, top_urls))
-        #plugins.connect(fig, plugins.PointClickableHTMLTooltip(bot_points, bot_labels, bot_urls))
+        # Broken (maximum recursion depth exceeded)
+        # plugins.connect(fig, plugins.PointClickableHTMLTooltip(top_points, top_labels, top_urls))
+        # plugins.connect(fig, plugins.PointClickableHTMLTooltip(bot_points, bot_labels, bot_urls))
 
     except Exception as e:
         print(e)
@@ -548,9 +551,9 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
         try:
             html_str = mpld3.fig_to_html(fig)
             return html_str
-            #html_file = open("templates/chart.html", "w")
-            #html_file.write(html_str)
-            #html_file.close()
+            # html_file = open("templates/chart.html", "w")
+            # html_file.write(html_str)
+            # html_file.close()
         except Exception as e:
             print(e)
 
