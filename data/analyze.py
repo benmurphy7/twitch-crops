@@ -39,7 +39,7 @@ class ClickInfo(mpld3.plugins.PluginBase):
         var obj = mpld3.get_element(this.props.id);
         urls = this.props.urls;
         obj.elements().on("mousedown.callout",
-                          function(d, i){ 
+                          function(d, i){
                             d3.select(this).classed("clicked", true);
                             window.open(urls[i], 'TwitchCrops')});
     }
@@ -132,7 +132,7 @@ class PointHTMLTooltip(PluginBase):
                 .style("top", d3.event.pageY + this.props.voffset + "px")
                 .style("left",d3.event.pageX + this.props.hoffset + "px");
             }.bind(this))
-            .on("mousedown.callout", function(d, i){
+            .on("click", function(d, i){
                 d3.select(this).classed("clicked", true);
                 window.open(targets[i],'TwitchCrops');
             })
