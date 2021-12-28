@@ -8,3 +8,8 @@ h1 {
 h2 {
     text-align: center;
 }
+
+::placeholder { /* Chrome, Firefox, Opera, Safari 10.1+ */
+  color: red;
+  opacity: 0.1; /* Firefox */
+}

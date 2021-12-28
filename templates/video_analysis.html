@@ -1,12 +1,15 @@
-{% extends 'base.html' %}
-
 {% include 'index.html' %}
 {% include 'video_info.html' %}
 
 {% block content %}
+<a href={{"/chart/{}".format(video_info['id'])}}><button class="btn btn-primary">Analyze</button></a>
+
+{% endblock %}
+
+<!--
 <form method="post" action="/chart">
         <div class="form-group">
-                <button type="submit" class="btn btn-primary">Analyze</button>
+
         </div>
 </form>
-{% endblock %}
+-->
