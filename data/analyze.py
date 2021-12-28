@@ -164,6 +164,35 @@ class PointHTMLTooltip(PluginBase):
                       "voffset": voffset}
 
 
+class TopToolbar(plugins.PluginBase):
+    """Plugin for moving toolbar to top of figure"""
+
+    JAVASCRIPT = """
+    mpld3.register_plugin("toptoolbar", TopToolbar);
+    TopToolbar.prototype = Object.create(mpld3.Plugin.prototype);
+    TopToolbar.prototype.constructor = TopToolbar;
+    function TopToolbar(fig, props){
+        mpld3.Plugin.call(this, fig, props);
+    };
+
+    TopToolbar.prototype.draw = function(){
+      // the toolbar svg doesn't exist
+      // yet, so first draw it
+      this.fig.toolbar.draw();
+
+      // then change the y position to be
+      // at the top of the figure
+      this.fig.toolbar.toolbar.attr("y", 2);
+
+      // then remove the draw function,
+      // so that it is not called again
+      this.fig.toolbar.draw = function() {}
+    }
+    """
+    def __init__(self):
+        self.dict_ = {"type": "toptoolbar"}
+
+
 def track_emotes(parsed, emotes, window_size, filters=None, valid_emotes_only=True, single_emotes_only=True):
     if filters is None:
         filters = []
@@ -532,6 +561,7 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
         plugins.connect(fig, PointHTMLTooltip(bot_points, bot_labels, bot_urls))
         plugins.connect(fig, plugins.PointLabelTooltip(top_points, top_labels))
         plugins.connect(fig, plugins.PointLabelTooltip(bot_points, bot_labels))
+        plugins.connect(plt.gcf(), TopToolbar())
 
         # Broken (won't map multiple point sets correctly across multiple ClickInfo objects)
         # plugins.connect(fig, ClickInfo(top_points, top_urls))

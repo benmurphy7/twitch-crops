@@ -1,11 +1,21 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<form method="post" action="/submit">
+{% set video_url = "https://www.twitch.tv/videos/" %}
+{% set video_id = "1234567890" %}
+
+{% if video_info is not none %}
+    {% set video_id = video_info['id'] %}
+{% endif %}
+
+{% set video_url = video_url + video_id %}
+
+
+<form method="post" action="/info">
     <div class="form-group">
         <label for="title">Video URL</label>
         <input type="text" name="video_id" style="color:black;"
-               placeholder="https://www.twitch.tv/videos/1234567890" class="form-control"/>
+               placeholder={{video_url}} class="form-control"/>
     </div>
     <!--
     <div class="form-group">
@@ -18,7 +28,14 @@
     </div>
     -->
     <div class="form-group">
-                <button type="submit" class="btn btn-primary">Submit</button>
+                <button type="submit" onclick="view_info()" class="btn btn-primary">Submit</button>
     </div>
 </form>
+
+<script>
+    function view_info() {
+        const video_id = document.querySelector('input').value;
+        console.log(video_id)
+    }
+</script>
 {% endblock %}

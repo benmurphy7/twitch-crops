@@ -1,9 +1,10 @@
 import gevent.monkey
+from werkzeug.utils import redirect
 
 gevent.monkey.patch_all()
 
 import twitch
-from flask import Flask, render_template, request, render_template_string
+from flask import Flask, render_template, request, render_template_string, url_for
 import ssl
 
 from data import collect, logs, analyze, images
@@ -25,28 +26,33 @@ def index():
         return display_video_info(video_id)
 
     else:
-        return render_template('index.html')
+        return render_template('index.html', video_info=None)
 
 
-@app.route('/submit', methods=('GET', 'POST'))
-def submit():
+@app.route('/info/<video_id>', methods=('GET', 'POST'))
+def info(video_id):
+    valid_id = collect.update_video_info(video_id)
+    if not video_id or not valid_id:
+        print('Inavlid Video ID')
+        return
+
+    video: twitch.Helix.video = collect.video_info
+
+    video_info = {
+        'id': video_id,
+        'title': video.title,
+        'user_name': video.user_name,
+        'duration': util.space_timestamp(video.duration)
+    }
+
+    return render_template('video_analysis.html', video_info=video_info)
+
+
+@app.route('/info', methods=('GET', 'POST'))
+def parse_info():
     if request.method == 'POST':
         video_id = util.parse_video_id(request.form['video_id'])
-        valid_id = collect.update_video_info(video_id)
-        video: twitch.Helix.video = collect.video_info
-
-        if not video_id or not valid_id:
-            print('Inavlid Video ID')
-            return
-
-        video_info = {
-            'id': video_id,
-            'title': video.title,
-            'user_name': video.user_name,
-            'duration': util.space_timestamp(video.duration)
-        }
-
-        return render_template('video_analysis.html', video_info=video_info)
+        return redirect(url_for('info', video_id=video_id))
 
 
 @app.route('/chart/<video_id>', methods=('GET', 'POST'))
@@ -65,18 +71,18 @@ def chart(video_id):
         'duration': util.space_timestamp(video.duration)
     }
 
+    zoom_str = '<body onload="document.body.style.zoom = 1.25"> </body>'
     style_str = "<style>h2 {text-align: center;}</style>"
     chart_title = "<h2>{} - {}</h2>".format(video.user_name, video.title)
 
     chart_html_str = render_chart(video_id)
-    chart_html_str = style_str + chart_title + chart_html_str
+    chart_html_str = zoom_str + style_str + chart_title + chart_html_str
 
     # return render_template('chart_view.html', video_info=video_info)
     return render_template_string(chart_html_str, video_info=video_info)
 
 
 def display_video_info(video_id):
-    video_info = {}
     valid_id = collect.update_video_info(video_id)
     video: twitch.Helix.video = collect.video_info
 
@@ -84,9 +90,12 @@ def display_video_info(video_id):
         print('Inavlid Video ID')
         return
 
-    video_info['title'] = video.title
-    video_info['user_name'] = video.user_name
-    video_info['duration'] = util.space_timestamp(video.duration)
+    video_info = {
+        'id': video_id,
+        'title': video.title,
+        'user_name': video.user_name,
+        'duration': util.space_timestamp(video.duration)
+    }
 
     return render_template('video_analysis.html', video_info=video_info)
 
