@@ -1,6 +1,8 @@
 import gevent.monkey
 from werkzeug.utils import redirect
 
+from common.util import get_filter_list
+
 gevent.monkey.patch_all()
 
 import twitch
@@ -29,6 +31,13 @@ def index():
         return render_template('index.html', video_info=None)
 
 
+@app.route('/info', methods=('GET', 'POST'))
+def parse_info():
+    if request.method == 'POST':
+        video_id = util.parse_video_id(request.form['video_id'])
+        return redirect(url_for('info', video_id=video_id))
+
+
 @app.route('/info/<video_id>', methods=('GET', 'POST'))
 def info(video_id):
     valid_id = collect.update_video_info(video_id)
@@ -48,13 +57,6 @@ def info(video_id):
     return render_template('video_analysis.html', video_info=video_info)
 
 
-@app.route('/info', methods=('GET', 'POST'))
-def parse_info():
-    if request.method == 'POST':
-        video_id = util.parse_video_id(request.form['video_id'])
-        return redirect(url_for('info', video_id=video_id))
-
-
 @app.route('/chart/<video_id>', methods=('GET', 'POST'))
 def chart(video_id):
     valid_id = collect.update_video_info(video_id)
@@ -71,12 +73,24 @@ def chart(video_id):
         'duration': util.space_timestamp(video.duration)
     }
 
+    args = request.args
+    filter_list = get_filter_list(args['filters'])
+
+    title_str = '<title>{}</title>'.format(video.title)
     zoom_str = '<body onload="document.body.style.zoom = 1.25"> </body>'
     style_str = "<style>h2 {text-align: center;}</style>"
     chart_title = "<h2>{} - {}</h2>".format(video.user_name, video.title)
 
-    chart_html_str = render_chart(video_id)
-    chart_html_str = zoom_str + style_str + chart_title + chart_html_str
+    chart_html_str = render_chart(video_id, filter_list)
+
+    #TODO:
+    # Show error message as HTML in chart page
+    #   OR
+    # Verify query strings (in a .../validate/... route and open new tab to redirected route if valid
+    #   If NOT valid, need to show status as text via AJAX (jquery?)
+
+
+    chart_html_str = title_str + zoom_str + style_str + chart_title + chart_html_str
 
     # return render_template('chart_view.html', video_info=video_info)
     return render_template_string(chart_html_str, video_info=video_info)

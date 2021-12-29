@@ -1,21 +1,21 @@
 {% extends 'base.html' %}
 
 {% block content %}
-{% set video_url = "https://www.twitch.tv/videos/" %}
-{% set video_id = "1234567890" %}
+
+{% set url_base = "https://www.twitch.tv/videos/" %}
+{% set url_placeholder = url_base + "1234567890" %}
+{% set url_value = "" %}
 
 {% if video_info is not none %}
-    {% set video_id = video_info['id'] %}
+    {% set url_value = url_base + video_info['id'] %}
 {% endif %}
-
-{% set video_url = video_url + video_id %}
 
 
 <form method="post" action="/info">
     <div class="form-group">
         <label for="title">Video URL</label>
         <input type="text" name="video_id" style="color:black;"
-               placeholder={{video_url}} class="form-control"/>
+               placeholder={{url_placeholder}} value="{{url_value}}" class="form-control"/>
     </div>
     <!--
     <div class="form-group">

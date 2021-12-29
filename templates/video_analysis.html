@@ -2,7 +2,49 @@
 {% include 'video_info.html' %}
 
 {% block content %}
-        <a href={{"/chart/{}".format(video_info['id'])}}><button class="btn btn-primary">Analyze</button></a>
+<!--
+        <a href={{"/chart/{}".format(video_info['id'])}} target="_blank"><button class="btn btn-primary">Analyze</button></a>
+-->
+
+<form name="options">
+    <div class="form-group">
+        <label for="filters">Filters</label>
+        <textarea name="filters" placeholder=""
+                  class="form-control"></textarea>
+    </div>
+    <div class="form-group">
+        <button type="submit" class="btn btn-primary">Analyze</button>
+    </div>
+</form>
+
+
+
+<script>
+        const form = document.forms.options;
+
+        function handleSubmit(event) {
+          event.preventDefault();
+          const formData = new FormData(event.target);
+        }
+
+        form.addEventListener('submit', handleSubmit);
+
+        function handleSubmit(event) {
+                event.preventDefault();
+                const formData = new FormData(event.target);
+                const data = [...formData.entries()];
+                const asString = data
+                        .map(x => `${encodeURIComponent(x[0])}=${encodeURIComponent(x[1])}`)
+                        .join('&');
+                console.log(asString);
+
+                var link = "{{"/chart/{}".format(video_info['id'])}}?" + asString;
+
+                console.log(link);
+                window.open(link, '_blank')
+        }
+
+</script>
 {% endblock %}
 
 <!--
