@@ -1,7 +1,6 @@
 from datetime import datetime
 
 import gevent.monkey
-from dateutil.parser import parser
 from werkzeug.utils import redirect
 
 from common.util import get_filter_list

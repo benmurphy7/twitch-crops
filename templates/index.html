@@ -10,27 +10,17 @@
     {% set url_value = url_base + video_info['id'] %}
 {% endif %}
 
+<div class="center-div">
+    <label>Video URL</label>
+    <div class="id-form">
+        <form method="post" action="/info">
+            <input class="form-control form-control-lg mr-3 mb-5" type="text" name="video_id" style="color:black;"
+                       placeholder={{url_placeholder}} value="{{url_value}}"/>
+            <button class="btn btn-primary btn-lg btn-submit" type="submit" onclick="view_info()">Submit</button>
+        </form>
+    </div>
+</div>
 
-<form method="post" action="/info">
-    <div class="form-group">
-        <label for="title">Video URL</label>
-        <input type="text" name="video_id" style="color:black;"
-               placeholder={{url_placeholder}} value="{{url_value}}" class="form-control"/>
-    </div>
-    <!--
-    <div class="form-group">
-        <label for="content">Filters</label>
-        <textarea name="filters" placeholder="'LUL' 'KEK' ..."
-                  class="form-control">{{ request.form['filters'] }}</textarea>
-    </div>
-    <div class="form-group">
-        <button type="submit" class="btn btn-primary">Submit</button>
-    </div>
-    -->
-    <div class="form-group">
-                <button type="submit" onclick="view_info()" class="btn btn-primary">Submit</button>
-    </div>
-</form>
 
 <script>
     function view_info() {

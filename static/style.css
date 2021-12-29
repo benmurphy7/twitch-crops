@@ -1,0 +1,48 @@
+h1 {
+    border: 2px #eee solid;
+    color: black;
+    text-align: center;
+    padding: 10px;
+}
+
+h2 {
+    text-align: center;
+}
+
+.btn-submit {
+    float: right;
+    position: absolute;
+}
+
+.center-div {
+    text-align: center;
+    align: center;
+}
+
+.id-form input {
+    display: inline-block;
+    width: 420px;
+}
+
+.navbar {
+    margin-bottom: 20px;
+}
+
+.video-info {
+    margin-top: 20px;
+}
+
+
+/*
+::placeholder { // Chrome, Firefox, Opera, Safari 10.1+
+  color: red;
+  opacity: 0.1; // Firefox
+}
+*/
+
+/*
+input[type=text] {
+  border: none;
+  border-bottom: 2px solid red;
+}
+*/

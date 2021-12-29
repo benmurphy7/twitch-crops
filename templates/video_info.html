@@ -4,9 +4,11 @@
     <title>Video Info</title>
 </head>
 <body>
-<h1> Title: {{ video_info['title'] }}</h1>
-<h1> Channel: {{ video_info['user_name'] }}</h1>
-<h1> Date: {{ video_info['date'] }}</h1>
-<h1> Length: {{ video_info['duration'] }}</h1>
+    <div class="video-info">
+        <h1> Title: {{ video_info['title'] }}</h1>
+        <h1> Channel: {{ video_info['user_name'] }}</h1>
+        <h1> Date: {{ video_info['date'] }}</h1>
+        <h1> Length: {{ video_info['duration'] }}</h1>
+    </div>
 </body>
 {% endblock %}
