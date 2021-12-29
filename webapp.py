@@ -1,4 +1,7 @@
+from datetime import datetime
+
 import gevent.monkey
+from dateutil.parser import parser
 from werkzeug.utils import redirect
 
 from common.util import get_filter_list
@@ -47,10 +50,14 @@ def info(video_id):
 
     video: twitch.Helix.video = collect.video_info
 
+    # Converts ISO date to human-readable string
+    video_date = datetime.fromisoformat(str(video.created_at).replace('Z', '+00:00')).strftime('%B %d, %Y')
+
     video_info = {
         'id': video_id,
         'title': video.title,
         'user_name': video.user_name,
+        'date': video_date,
         'duration': util.space_timestamp(video.duration)
     }
 
