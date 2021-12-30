@@ -14,18 +14,12 @@
     <label>Video URL</label>
     <div class="id-form">
         <form method="post" action="/info">
-            <input class="form-control form-control-lg mr-3 mb-5" type="text" name="video_id" style="color:black;"
+            <input class="form-control form-control-lg mr-3 mb-3" type="text" name="video_id" style="color:black;"
                        placeholder={{url_placeholder}} value="{{url_value}}"/>
-            <button class="btn btn-primary btn-lg btn-submit" type="submit" onclick="view_info()">Submit</button>
+            <button class="btn btn-primary btn-lg btn-submit" type="submit">Submit</button>
         </form>
     </div>
+    <label>{{ id_msg }}</label>
 </div>
 
-
-<script>
-    function view_info() {
-        const video_id = document.querySelector('input').value;
-        console.log(video_id)
-    }
-</script>
 {% endblock %}

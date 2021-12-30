@@ -65,6 +65,7 @@ def initialize_client():
 
 def update_video_info(video_id):
     global video_info
+
     try:
         for video in client.videos(video_id):
             video_info = video
