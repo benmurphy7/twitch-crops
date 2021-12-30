@@ -1,6 +1,8 @@
+import webbrowser
 from datetime import datetime
 
 import gevent.monkey
+from markupsafe import escape
 from werkzeug.utils import redirect
 
 from common.util import get_filter_list
@@ -68,6 +70,30 @@ def info(video_id):
 
 
 @app.route('/validate/<video_id>', methods=('GET', 'POST'))
+def validate(video_id):
+    valid_id = collect.update_video_info(video_id)
+    video: twitch.Helix.video = collect.video_info
+
+    if not video_id or not valid_id:
+        print('Inavlid Video ID')
+        return
+
+    video_info = {
+        'id': video_id,
+        'title': video.title,
+        'user_name': video.user_name,
+        'duration': util.space_timestamp(video.duration)
+    }
+
+    filters = request.args.get('filters', default='', type=None)
+    filter_list = get_filter_list(filters)
+
+    valid, msg = validate_filters(filter_list)
+
+    if valid:
+        webbrowser.open_new_tab(url_for('chart', video_id=video_id, _external=True))
+
+    return render_template('video_analysis.html', video_info=video_info, filters=filters, filter_msg=msg)
 
 
 @app.route('/chart/<video_id>', methods=('GET', 'POST'))
@@ -145,6 +171,20 @@ def display_emotes(video_id):
     except Exception as e:
         print(e)
 
+
+def validate_filters(filter_list):
+    chat_emotes = collect.get_available_emotes()
+
+    for filter in filter_list:
+        valid = False
+        for emote in chat_emotes:
+            if util.filter_match(filter, emote):
+                valid = True
+                break
+        if not valid:
+            return False, "Error: ' {} ' is not a valid filter!".format(filter)
+
+    return True, ""
 
 def render_chart(video_id, filter_list=[]):
     collect.update_video_info(video_id)

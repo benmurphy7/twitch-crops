@@ -15,7 +15,7 @@
                     <i class="fas fa-question-circle" title="Space-separated emote names or text. &quot;case-sensitive text&quot; 'any-case text'"></i>
                 </div>
             </div>
-            <textarea class="form-control" name="filters" placeholder="LULW &quot;LUL&quot; 'lul'" value="{{filters}}"></textarea>
+            <textarea class="form-control" name="filters" placeholder="LULW &quot;LUL&quot; 'lul'">{{ filters }}</textarea>
         </div>
         <div class="center-div">
             <label>{{ filter_msg }}</label>
@@ -45,10 +45,10 @@
                         .join('&');
                 console.log(asString);
 
-                var link = "{{"/chart/{}".format(video_info['id'])}}?" + asString;
+                var link = "{{"/validate/{}".format(video_info['id'])}}?" + asString;
 
-                console.log(link);
-                window.open(link, '_blank')
+                //window.open(link, '_blank')
+                window.location.href = link
         }
 
 </script>
