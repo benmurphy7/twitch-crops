@@ -3,6 +3,7 @@ h1 {
     color: black;
     text-align: center;
     padding: 10px;
+    font-size: 25px;
 }
 
 h2 {
@@ -17,6 +18,11 @@ h2 {
 .center-div {
     text-align: center;
     align: center;
+}
+
+.filter-form {
+    position: relative;
+    width:50%;
 }
 
 .id-form input {

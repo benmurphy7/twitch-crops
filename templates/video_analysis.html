@@ -6,14 +6,19 @@
         <a href={{"/chart/{}".format(video_info['id'])}} target="_blank"><button class="btn btn-primary">Analyze</button></a>
 -->
 
-<div class="center-div mt-5">
-    <form name="options">
-        <div class="center-div">
-            <label>Filters</label>
-            <textarea name="filters" placeholder="" class="form-control"></textarea>
-        </div>
-        <div class="form-group">
-            <button type="submit" class="btn btn-primary btn-lg mt-3">Analyze</button>
+<div class="row justify-content-center mt-5">
+    <form name="options" class="filter-form">
+        <div class="row justify-content-center">
+            <div class="row justify-content-center">
+                <div class="col justify-content-center">
+                    <label>Filters</label>
+                    <i class="fas fa-question-circle" title="Space-separated emote names or text. &quot;case-sensitive text&quot; 'any-case text'"></i>
+                </div>
+            </div>
+            <textarea name="filters" placeholder="LULW &quot;LUL&quot; 'lul'" class="form-control"></textarea>
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary btn-lg mt-3">Analyze</button>
+            </div>
         </div>
     </form>
 </div>
