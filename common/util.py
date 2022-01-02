@@ -25,8 +25,13 @@ def to_timestamp(secs):
 
 
 def get_seconds(timestamp):
+    d = 0
+    if ',' in timestamp:
+        d = timestamp.split(' ')[0]
+        timestamp = timestamp.split(',')[1]
+
     h, m, s = timestamp.split(':')
-    return int(h) * 3600 + int(m) * 60 + int(s)
+    return int(d) * 86400 + int(h) * 3600 + int(m) * 60 + int(s)
 
 
 def link_time(secs):

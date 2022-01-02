@@ -1,3 +1,4 @@
+import traceback
 import warnings
 import webbrowser
 from textwrap import wrap
@@ -241,90 +242,94 @@ def track_emotes(parsed, emotes, window_size, filters=None, valid_emotes_only=Tr
     # Merging repeated windows
     prev_emote = ""
 
-    for comment in parsed:
-        timestamp = comment[0]
-        if not first_message_timestamp:
-            first_message_timestamp = timestamp
-        user = comment[1]
-        message = comment[2]
-        rounded_time = util.round_down(util.get_seconds(timestamp), window_size)
+    try:
+        for comment in parsed:
+            timestamp = comment[0]
+            if not first_message_timestamp:
+                first_message_timestamp = timestamp
+            user = comment[1]
+            message = comment[2]
+            rounded_time = util.round_down(util.get_seconds(timestamp), window_size)
 
-        total_messages += 1
+            total_messages += 1
 
-        # Start of new window
-        if rounded_time > window_start:
+            # Start of new window
+            if rounded_time > window_start:
 
-            total_windows += 1
+                total_windows += 1
 
-            # Get max from ending window
-            top_item = util.top_item(window_data)
-            first_emote_timestamp = top_item[1][1]
-            if not first_emote_timestamp:
-                first_emote_timestamp = first_message_timestamp
-            total_value = util.total_value(window_data)
+                # Get max from ending window
+                top_item = util.top_item(window_data)
+                first_emote_timestamp = top_item[1][1]
+                if not first_emote_timestamp:
+                    first_emote_timestamp = first_message_timestamp
+                total_value = util.total_value(window_data)
 
-            top_emote = top_item[0]
-            top_count = top_item[1][0]
-            top_emote_data = [top_emote, top_count, total_value]
+                top_emote = top_item[0]
+                top_count = top_item[1][0]
+                top_emote_data = [top_emote, top_count, total_value]
 
-            # Check for repeated windows and merge
-            # TODO: Assign top count to window with highest message count?
-            # TODO: Find max chat message counts and shift top emotes to that peak if close?
-            if top_emote is prev_emote:
-                if top_count > emote_max:
-                    emote_max = top_count
-                    activity[previous_timestamp] = [[top_emote, 0, 0], [first_message_timestamp, message_count]]
+                # Check for repeated windows and merge
+                # TODO: Assign top count to window with highest message count?
+                # TODO: Find max chat message counts and shift top emotes to that peak if close?
+                if top_emote is prev_emote:
+                    if top_count > emote_max:
+                        emote_max = top_count
+                        activity[previous_timestamp] = [[top_emote, 0, 0], [first_message_timestamp, message_count]]
+                    else:
+                        # Flatten non-max window
+                        top_emote_data = [top_emote, 0, 0]
+
                 else:
-                    # Flatten non-max window
-                    top_emote_data = [top_emote, 0, 0]
+                    emote_max = top_count
 
-            else:
-                emote_max = top_count
+                activity[first_emote_timestamp] = [top_emote_data, [first_message_timestamp, message_count]]
 
-            activity[first_emote_timestamp] = [top_emote_data, [first_message_timestamp, message_count]]
+                first_message_timestamp = timestamp
+                message_count = 0
+                prev_emote = top_emote
+                window_start = rounded_time
+                window_data = {}
+                previous_timestamp = first_emote_timestamp
 
-            first_message_timestamp = timestamp
-            message_count = 0
-            prev_emote = top_emote
-            window_start = rounded_time
-            window_data = {}
-            previous_timestamp = first_emote_timestamp
+            message_count += 1
 
-        message_count += 1
+            tokens = message.split(" ")
 
-        tokens = message.split(" ")
-
-        # Filter Matching
-        if single_emotes_only:
-            if len(tokens) == 1:
-                for emote in log_emotes_list:
-                    if emote in message:
-                        cleaned = message.replace(emote, "", 1)
-                        # Message contains more than emote name - ignore
-                        if cleaned != "":
-                            continue
-                        util.add_value(window_data, emote, 1, timestamp)
-                        total_emotes += 1
-        else:
-            if valid_emotes_only:
-                for token in tokens:
+            # Filter Matching
+            if single_emotes_only:
+                if len(tokens) == 1:
                     for emote in log_emotes_list:
-                        if emote == token:
+                        if emote in message:
+                            cleaned = message.replace(emote, "", 1)
+                            # Message contains more than emote name - ignore
+                            if cleaned != "":
+                                continue
                             util.add_value(window_data, emote, 1, timestamp)
                             total_emotes += 1
             else:
-                # TODO: Optimize contains search for phrases
-                for emote in log_emotes_list:
-                    if util.filter_match(emote, message):
-                        util.add_value(window_data, emote, 1, timestamp)
-                        total_emotes += 1
+                if valid_emotes_only:
+                    for token in tokens:
+                        for emote in log_emotes_list:
+                            if emote == token:
+                                util.add_value(window_data, emote, 1, timestamp)
+                                total_emotes += 1
+                else:
+                    # TODO: Optimize contains search for phrases
+                    for emote in log_emotes_list:
+                        if util.filter_match(emote, message):
+                            util.add_value(window_data, emote, 1, timestamp)
+                            total_emotes += 1
 
-        """
-        # Count all unique emotes - analysis is too slow
-        for emote in log_emotes_list:
-            if emote in message:
-                util.add_value(window_data, emote, 1, timestamp)
-        """
+            """
+            # Count all unique emotes - analysis is too slow
+            for emote in log_emotes_list:
+                if emote in message:
+                    util.add_value(window_data, emote, 1, timestamp)
+            """
+    except Exception as e:
+        print(e)
+        print(traceback.format_exc())
 
     if not filters:
         log_emotes_list = []
