@@ -1,4 +1,5 @@
 import re
+import traceback
 
 from common import config
 
@@ -7,10 +8,7 @@ import requests as req
 import twitch
 
 #TODO: Store data in object
-chat_emotes = {}
 client: twitch.Helix = None
-video_info: twitch.Helix.video = None
-
 
 def get_client_info(file):
     with open(file) as f:
@@ -18,9 +16,7 @@ def get_client_info(file):
         return lines[0].strip(), lines[1].strip()
 
 
-def add_emote(key, url):
-    global chat_emotes
-
+def add_emote(chat_emotes, key, url):
     if "-" in key:
         return 0
     if key not in chat_emotes:
@@ -44,24 +40,34 @@ def get_emote_info(emote):
     return string, emote['id']
 
 
-def add_bttv_emote(emote):
+def add_bttv_emote(chat_emotes, emote):
     bttv_url = "https://cdn.betterttv.net/emote/"
     name, id = get_emote_info(emote)
     url = bttv_url + str(id) + "/1x"
-    return add_emote(name, url)
+    return add_emote(chat_emotes, name, url)
 
 
-def add_ttv_emote(emote):
+def add_ttv_emote(chat_emotes, emote):
     ttv_url = "https://static-cdn.jtvnw.net/emoticons/v1/"
     name, id = get_emote_info(emote)
     url = ttv_url + str(id) + "/1.0"
-    return add_emote(name, url)
+    return add_emote(chat_emotes, name, url)
 
 
 def initialize_client():
     client_id, client_secret = get_client_info(config.client_info)
     return twitch.Helix(client_id=client_id, client_secret=client_secret)
 
+def get_video_info(video_id):
+    video_info = None
+
+    try:
+        for video in client.videos(video_id):
+            video_info = video
+    except Exception as e:
+        print(e)
+        print(traceback.format_exc())
+    return video_info
 
 def update_video_info(video_id):
     global video_info
@@ -70,19 +76,20 @@ def update_video_info(video_id):
         for video in client.videos(video_id):
             video_info = video
     except Exception as e:
+        print(traceback.format_exc())
         return False
     return True
 
 
-def get_available_emotes():
-    global chat_emotes
-    global video_info
+def get_available_emotes(video: twitch.Helix.video):
     global client
     chat_emotes = {}
 
+    print("video: {}".format(video))
+
     print('-'*80)
-    print("\nVideo title: " + video_info.title)
-    print("Channel: " + video_info.user_name)
+    print("\nVideo title: " + video.title)
+    print("Channel: " + video.user_name)
 
     # --Supported emote sources--
     # TTV
@@ -93,24 +100,24 @@ def get_available_emotes():
 
     # Get BTTV emotes
     try:
-        bttv_user = req.get('https://api.betterttv.net/3/cached/users/twitch/' + video_info.user_id).json()
+        bttv_user = req.get('https://api.betterttv.net/3/cached/users/twitch/' + video.user_id).json()
 
         for emote in bttv_user['sharedEmotes']:
-            bttv += add_bttv_emote(emote)
+            bttv += add_bttv_emote(chat_emotes, emote)
 
         for emote in bttv_user['channelEmotes']:
-            bttv += add_bttv_emote(emote)
+            bttv += add_bttv_emote(chat_emotes, emote)
 
         bttv_global = req.get('https://api.betterttv.net/3/cached/emotes/global').json()
 
         for emote in bttv_global:
-            bttv += add_bttv_emote(emote)
+            bttv += add_bttv_emote(chat_emotes, emote)
     except:
         print("Error loading BTTV emotes")
 
     # Get FFZ emotes
     try:
-        ffz_room = req.get('https://api.frankerfacez.com/v1/room/id/' + video_info.user_id).json()
+        ffz_room = req.get('https://api.frankerfacez.com/v1/room/id/' + video.user_id).json()
         sets = ffz_room['sets']
 
         for set in sets:
@@ -118,7 +125,7 @@ def get_available_emotes():
                 name = emoticon['name']
                 url_dict = emoticon['urls']
                 url = "https:" + url_dict[list(url_dict)[0]]
-                ffz += add_emote(name, url)
+                ffz += add_emote(chat_emotes, name, url)
     except:
         print("Error loading FFZ emotes")
 
@@ -126,15 +133,15 @@ def get_available_emotes():
     try:
         global_emotes = client.api.get('chat/emotes/global')
         for emote in global_emotes['data']:
-            ttv += add_ttv_emote(emote)
+            ttv += add_ttv_emote(chat_emotes, emote)
     except:
         print("Error loading Twitch global emotes")
 
     # Get twitch channel emotes
     try:
-        channel_emotes = client.api.get('chat/emotes', params={'broadcaster_id': video_info.user_id})
+        channel_emotes = client.api.get('chat/emotes', params={'broadcaster_id': video.user_id})
         for emote in channel_emotes['data']:
-            ttv += add_ttv_emote(emote)
+            ttv += add_ttv_emote(chat_emotes, emote)
     except:
         print("Error loading Twitch channel emotes")
 

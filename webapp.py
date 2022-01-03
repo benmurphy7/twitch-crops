@@ -1,4 +1,5 @@
 import subprocess
+import traceback
 import webbrowser
 from datetime import datetime
 
@@ -49,14 +50,12 @@ def parse_info():
 
 @app.route('/info/<video_id>', methods=('GET', 'POST'))
 def info(video_id):
-    valid_id = collect.update_video_info(video_id)
-    if not video_id or not valid_id:
+    video: twitch.Helix.video = collect.get_video_info(video_id)
+    if not video_id or not video:
         return render_template(
             'index.html',
             video_info=None,
             id_msg="Error: '{}' is not a valid ID!".format(video_id))
-
-    video: twitch.Helix.video = collect.video_info
 
     button_name = "Download"
     if logs.chat_log_exists(video_id):
@@ -78,10 +77,8 @@ def info(video_id):
 
 @app.route('/download/<video_id>', methods=('GET', 'POST'))
 def download(video_id):
-    valid_id = collect.update_video_info(video_id)
-    video: twitch.Helix.video = collect.video_info
-
-    if not video_id or not valid_id:
+    video: twitch.Helix.video = collect.get_video_info(video_id)
+    if not video_id or not video:
         print('Inavlid Video ID')
         return
 
@@ -116,10 +113,8 @@ def download(video_id):
 
 @app.route('/validate/<video_id>', methods=('GET', 'POST'))
 def validate(video_id):
-    valid_id = collect.update_video_info(video_id)
-    video: twitch.Helix.video = collect.video_info
-
-    if not video_id or not valid_id:
+    video: twitch.Helix.video = collect.get_video_info(video_id)
+    if not video_id or not video:
         print('Inavlid Video ID')
         return
 
@@ -140,7 +135,7 @@ def validate(video_id):
     filters = request.args.get('filters', default='', type=None)
     filter_list = get_filter_list(filters)
 
-    valid, msg = validate_filters(filter_list)
+    valid, msg = validate_filters(video, filter_list)
 
     button_name = "Download"
     if logs.chat_log_exists(video_id):
@@ -154,10 +149,8 @@ def validate(video_id):
 
 @app.route('/chart/<video_id>', methods=('GET', 'POST'))
 def chart(video_id):
-    valid_id = collect.update_video_info(video_id)
-    video: twitch.Helix.video = collect.video_info
-
-    if not video_id or not valid_id:
+    video: twitch.Helix.video = collect.get_video_info(video_id)
+    if not video_id or not video:
         print('Inavlid Video ID')
         return
 
@@ -176,7 +169,7 @@ def chart(video_id):
     style_str = "<style>h2 {text-align: center;}</style>"
     chart_title = "<h2>{} - {}</h2>".format(video.user_name, video.title)
 
-    render_str, code = render_chart(video_id, filter_list)
+    render_str, code = render_chart(video, filter_list)
 
     if code != 0:
         return render_template('video_analysis.html', video_info=video_info, filters=filters, filter_msg=render_str)
@@ -194,10 +187,8 @@ def chart(video_id):
 
 
 def display_video_info(video_id):
-    valid_id = collect.update_video_info(video_id)
-    video: twitch.Helix.video = collect.video_info
-
-    if not video_id or not valid_id:
+    video: twitch.Helix.video = collect.get_video_info(video_id)
+    if not video_id or not video:
         print('Inavlid Video ID')
         return
 
@@ -211,8 +202,8 @@ def display_video_info(video_id):
     return render_template('video_analysis.html', video_info=video_info)
 
 
-def display_emotes(video_id):
-    chat_emotes = collect.get_available_emotes()
+def display_emotes(video: twitch.Helix.video):
+    chat_emotes = collect.get_available_emotes(video)
 
     if chat_emotes is None:
         print('Inavlid Video ID')
@@ -226,10 +217,11 @@ def display_emotes(video_id):
             images.get_images(urls)
     except Exception as e:
         print(e)
+        print(traceback.format_exc())
 
 
-def validate_filters(filter_list):
-    chat_emotes = collect.get_available_emotes()
+def validate_filters(video: twitch.Helix.video, filter_list):
+    chat_emotes = collect.get_available_emotes(video)
 
     for filter in filter_list:
         valid = False
@@ -243,12 +235,11 @@ def validate_filters(filter_list):
     return True, ""
 
 
-def render_chart(video_id, filter_list=[]):
-    collect.update_video_info(video_id)
-    chat_emotes = collect.get_available_emotes()
-    data, valid, invalid, stats = logs.parse_vod_log(video_id, chat_emotes, filter_list, 5)
+def render_chart(video: twitch.Helix.video, filter_list=[]):
+    chat_emotes = collect.get_available_emotes(video)
+    data, valid, invalid, stats = logs.parse_vod_log(video.id, chat_emotes, filter_list, 5)
     if invalid is None:
-        html_str = analyze.plot_video_data(collect.video_info, data, valid, stats, 50, 10, True)
+        html_str = analyze.plot_video_data(video, data, valid, stats, 50, 10, True)
     else:
         return "Error: ' {} ' is not a valid filter!".format(invalid), 1
 

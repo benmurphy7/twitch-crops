@@ -6,6 +6,7 @@ from datetime import timedelta
 from os import path
 from pathlib import Path
 
+import twitch
 from PyQt5.QtCore import pyqtSignal
 
 from data import analyze, collect
@@ -56,15 +57,15 @@ def log_end_time(video_id):
     return util.parse_timestamp(last_line)
 
 
-def get_log_file():
-    return get_log_path(collect.video_info.id)
+def get_log_file(video_id):
+    return get_log_path(video_id)
 
 
-def check_for_updates(video_id):
+def check_for_updates(video: twitch.Helix.video):
     # Checking if log exists is redundant for now, but may be needed if called from elsewhere
-    if chat_log_exists(video_id):
-        last_time = log_end_time(video_id)
-        video_time = util.link_time_to_timestamp(collect.video_info.duration)
+    if chat_log_exists(video.id):
+        last_time = log_end_time(video.id)
+        video_time = util.link_time_to_timestamp(video.duration)
         if util.get_seconds(last_time) < util.get_seconds(video_time):
             download_log()
             return True
@@ -103,31 +104,31 @@ def get_or_make_temp_dir():
     return temp_dir
 
 
-def update_fragment(cursor, comments, idx):
+def update_fragment(video_id, cursor, comments, idx):
     new_block = ''
     for i in range(idx, len(comments)):
         line = format_comment(comments[i])
         new_block += line
     new_block += cursor + "\n"
-    with open(get_log_file(), 'a+', encoding='utf-8') as file:
+    with open(get_log_file(video_id), 'a+', encoding='utf-8') as file:
         file.write(new_block)
 
 
-def fragment_change(cursor, last_saved_comment):
-    comments = get_comments(cursor)
+def fragment_change(video, cursor, last_saved_comment):
+    comments = get_comments(video, cursor)
     last_fragment_comment = format_comment(comments[-1])
     if last_fragment_comment == last_saved_comment:
         return False
     for x, comment in enumerate(comments):
         line = format_comment(comment)
         if line == last_fragment_comment:
-            update_fragment(cursor, comments, x)
+            update_fragment(video, cursor, comments, x)
     return True
 
 
-def next_cursor(cursor):
+def next_cursor(video: twitch.Helix.video, cursor):
     try:
-        fragment = collect.video_info.comments.fragment(cursor)
+        fragment = video.comments.fragment(cursor)
         if '_next' in fragment:
             return fragment['_next']
         else:
@@ -160,8 +161,8 @@ def download_progress(video_id, comment, end, signal: pyqtSignal = None):
         sys.stdout.write(status)
 
 
-def get_comments(cursor):
-    fragment = collect.video_info.comments.fragment(cursor)
+def get_comments(video, cursor):
+    fragment = video.comments.fragment(cursor)
     return fragment['comments']
 
 
@@ -197,11 +198,11 @@ def download_log(video_info, signal: pyqtSignal = None):
         traceback.print_exception(*sys.exc_info())
 
 
-def cursor_update(video_id):
+def cursor_update(video: twitch.Helix.video):
     try:
         cursor = ''
-        if chat_log_exists(video_id):
-            lines = get_last_lines(get_log_path(video_id), n=2)
+        if chat_log_exists(video.id):
+            lines = get_last_lines(get_log_path(video.id), n=2)
             cursor = lines[0].replace("\n", "")
             last_saved_comment = lines[1] + "\n"
             split = cursor.split(" ")
@@ -214,12 +215,13 @@ def cursor_update(video_id):
                 cursor = ''
 
             if cursor:
-                if fragment_change(cursor, last_saved_comment):
+                if fragment_change(video, cursor, last_saved_comment):
                     pass
-                cursor = next_cursor(cursor)
+                cursor = next_cursor(video, cursor)
 
         return cursor
 
     except Exception as e:
         print(e)
+        print(traceback.format_exc())
         return ''

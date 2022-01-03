@@ -1,13 +1,16 @@
 import sys
 
+import twitch
+
 from data import collect, logs
 import TwitchCrops
 
 
 def download(video_id):
-    if collect.update_video_info(video_id):
-        if not logs.chat_log_exists(video_id) or logs.cursor_update(video_id):
-            logs.download_log(collect.video_info)
+    video: twitch.Helix.video = collect.get_video_info(video_id)
+    if video:
+        if not logs.chat_log_exists(video_id) or logs.cursor_update(video):
+            logs.download_log(video)
         else:
             print("Existing log is complete.")
     else:

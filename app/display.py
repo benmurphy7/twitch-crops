@@ -1,7 +1,9 @@
 import copy
 import sys
 import time
+import traceback
 
+import twitch
 from PyQt5 import uic
 from PyQt5.QtCore import Qt, QProcess, QTimer, QObject, pyqtSignal, QThread, qInstallMessageHandler
 from PyQt5.QtGui import QMovie
@@ -16,6 +18,7 @@ class Ui(QMainWindow):
         super(Ui, self).__init__()
         uic.loadUi(config.ui_template, self)
         self.video_id = ""
+        self.video: twitch.Helix.video = None
         self.chat_emotes = {}
         self.clear_emote_area()
         self.process = None
@@ -72,7 +75,8 @@ class Ui(QMainWindow):
         video_id = self.vodEntry.currentText()
         self.lock_emotes = True
         self.emoteSearch.setText("")
-        if not video_id or not collect.update_video_info(video_id):
+        self.video = collect.get_video_info(video_id)
+        if not video_id or not self.video:
             self.invalid_id()
             return
         else:
@@ -80,14 +84,14 @@ class Ui(QMainWindow):
             self.harvestBtn.repaint()
             self.update_status("Fetching stream info ...")
             self.video_id = video_id
-            chat_emotes = collect.get_available_emotes()
+            chat_emotes = collect.get_available_emotes(self.video)
             if chat_emotes is None:
                 self.invalid_id()
                 return
 
-            self.titleLabel.setText(collect.video_info.title)
-            self.channelLabel.setText(collect.video_info.user_name)
-            self.lengthLabel.setText(util.space_timestamp(collect.video_info.duration))
+            self.titleLabel.setText(self.video.title)
+            self.channelLabel.setText(self.video.user_name)
+            self.lengthLabel.setText(util.space_timestamp(self.video.duration))
             self.chat_emotes = chat_emotes
 
             urls = images.missing_emotes(chat_emotes)
@@ -98,19 +102,21 @@ class Ui(QMainWindow):
                     images.get_images(urls)
             except Exception as e:
                 print(e)
+                print(traceback.format_exc())
 
             self.lock_emotes = False
             self.display_emotes()
             self.update_status("")
 
-        self.set_harvest_text(self.video_id)
+        self.set_harvest_text()
         self.updateBtn.setDisabled(False)
 
     def download_process(self):
         try:
             if not self.downloading:
-                if collect.update_video_info(self.video_id):
-                    if not logs.chat_log_exists(self.video_id) or logs.cursor_update(self.video_id):
+                self.video = collect.get_video_info(self.video_id)
+                if self.video:
+                    if not logs.chat_log_exists(self.video.id) or logs.cursor_update(self.video):
                         self.downloading = True
                         self.process_id = self.video_id
                         self.update_id = True
@@ -125,7 +131,7 @@ class Ui(QMainWindow):
                         self.worker.finished.connect(self.process_finished)
 
                         self.thread.start()
-                        self.set_harvest_text(self.video_id)
+                        self.set_harvest_text()
 
                         while self.update_id:
                             time.sleep(0.5)
@@ -135,6 +141,7 @@ class Ui(QMainWindow):
 
         except Exception as e:
             print(e)
+            print(traceback.format_exc())
 
     def handle_msg(msg_type, idx, msg_log_context, msg_string):
         pass
@@ -147,6 +154,7 @@ class Ui(QMainWindow):
             print(stderr)
         except Exception as e:
             print(e)
+            print(traceback.format_exc())
 
     def handle_stdout(self):
         try:
@@ -160,6 +168,7 @@ class Ui(QMainWindow):
 
         except Exception as e:
             print(e)
+            print(traceback.format_exc())
 
     def handle_state(self, state):
         states = {
@@ -173,7 +182,7 @@ class Ui(QMainWindow):
         self.process = None
         self.downloading = False
         self.harvestBtn.setDisabled(False)
-        self.set_harvest_text(self.video_id)
+        self.set_harvest_text()
         status = "Download complete: "
         if not logs.chat_log_exists(self.process_id):
             status = "Chat data currently unavailable: "
@@ -194,22 +203,23 @@ class Ui(QMainWindow):
         self.vodEntry.clear()
         self.vodEntry.addItems([s.strip(".log") for s in logs.get_existing_logs()])
 
-    def set_harvest_text(self, video_id):
+    def set_harvest_text(self):
         try:
-            log_exists = logs.chat_log_exists(video_id)
-            if log_exists or self.is_downloading(video_id):
+            log_exists = logs.chat_log_exists(self.video_id)
+            if log_exists or self.is_downloading(self.video_id):
                 self.harvestBtn.setText("Analyze")
                 self.harvestBtn.setEnabled(True)
             else:
                 self.enable_download("Download")
 
-            if self.downloading is False and logs.cursor_update(video_id):
+            if self.downloading is False and logs.cursor_update(self.video):
                 self.enable_download("Sync")
 
             self.harvestBtn.repaint()
 
         except Exception as e:
             print(e)
+            print(traceback.format_exc())
 
     def harvest(self):
         self.harvestBtn.setDisabled(True)
@@ -242,7 +252,7 @@ class Ui(QMainWindow):
             self.harvestBtn.repaint()
             if invalid is None:
                 self.update_status("")
-                analyze.plot_video_data(collect.video_info, data, valid, stats, int(self.showMax.text()),
+                analyze.plot_video_data(self.video, data, valid, stats, int(self.showMax.text()),
                                         int(self.linkOffset.text()))
             else:
                 self.update_status("Error: ' {} ' is not a valid filter".format(invalid))
@@ -311,7 +321,7 @@ class Worker(QObject):
     progress = pyqtSignal(str)
 
     def run(self):
-        logs.download_log(copy.deepcopy(collect.video_info), self.progress)
+        logs.download_log(copy.deepcopy(self.video), self.progress)
         self.finished.emit()
 
 

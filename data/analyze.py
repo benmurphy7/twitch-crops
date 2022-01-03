@@ -227,6 +227,7 @@ def track_emotes(parsed, emotes, window_size, filters=None, valid_emotes_only=Tr
             log_emotes_list = emotes
     except Exception as e:
         print(e)
+        print(traceback.format_exc())
 
     stats = {}
     total_messages = 0
@@ -346,7 +347,7 @@ def track_emotes(parsed, emotes, window_size, filters=None, valid_emotes_only=Tr
     return activity, log_emotes_list, None, stats
 
 
-def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, limit=0, offset=10, html=False):
+def plot_video_data(video: twitch.helix.Video, activity, filters, stats, limit=0, offset=10, html=False):
     global clip_margin
     clip_margin = offset
 
@@ -440,7 +441,7 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
     fig, axes = plt.subplots(2, figsize=(15, 8))
     fig.tight_layout(pad=3.0)
 
-    plot_title = video_info.user_name + " - " + video_info.title
+    plot_title = video.user_name + " - " + video.title
 
     if not html:
         plt.ion()
@@ -523,7 +524,7 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
                 timestamp = best_msg_times[ind]
             fig.canvas.draw()
             link_secs = util.get_seconds(timestamp) - offset
-            webbrowser.open(util.timestamp_url(video_info.id, link_secs), new=0, autoraise=True)
+            webbrowser.open(util.timestamp_url(video.id, link_secs), new=0, autoraise=True)
 
             """
             # Output to easily copy clip start/end
@@ -550,14 +551,14 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
         for idx, point in enumerate(e_x):
             timestamp = emotes_x[idx]
             link_secs = util.get_seconds(timestamp) - offset
-            top_urls.append(util.timestamp_url(video_info.id, link_secs))
+            top_urls.append(util.timestamp_url(video.id, link_secs))
 
             top_labels.append(set_text(best_emote_times, activity, idx, 0))
 
         for idx, point in enumerate(m_x):
             timestamp = best_msg_times[idx]
             link_secs = util.get_seconds(timestamp) - offset
-            bot_urls.append(util.timestamp_url(video_info.id, link_secs))
+            bot_urls.append(util.timestamp_url(video.id, link_secs))
 
             bot_labels.append(set_text(best_msg_times, activity, idx, 1))
 
@@ -578,6 +579,7 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
 
     except Exception as e:
         print(e)
+        print(traceback.format_exc())
 
     # plugins.connect(fig, ClickInfo(top_points, top_urls))
 
@@ -591,6 +593,7 @@ def plot_video_data(video_info: twitch.helix.Video, activity, filters, stats, li
             # html_file.close()
         except Exception as e:
             print(e)
+            print(traceback.format_exc())
 
     else:
         with warnings.catch_warnings():
