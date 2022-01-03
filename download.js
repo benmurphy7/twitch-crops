@@ -5,9 +5,16 @@ const video_id = '1249134654';
 const clientInfo = fs.readFileSync('clientInfo.txt', 'utf8').split('\n');
 var token;
 
+items = [];
+
 commentMap = {}
 
+cursorMap = {}
+cursorQueue = []
+
 const progressUpdate = setInterval(showProgress, 500)
+
+var total_comments = 0;
 
 var total_duration;
 var logged_duration;
@@ -40,7 +47,7 @@ async function multiThreadDownload(video_id, threads) {
     for (let i=threads; i > 0; i--) {
         offset = section_dist * (i-1);
         //console.log(`Thread ${i} = offset: ${offset}`);
-        promiseArray.push(logSection(i, video_id, offset, null));
+        promiseArray.push(logChunk(i, video_id, offset, null));
     }
 
     await Promise.all(promiseArray);
@@ -48,6 +55,8 @@ async function multiThreadDownload(video_id, threads) {
     clearInterval(progressUpdate);
     showProgress();
     console.log("Download Complete!")
+    console.log(`total comments: ${total_comments}`)
+    //console.log(cursorQueue);
 
     // Stitch together section files
 
@@ -60,6 +69,7 @@ async function multiThreadDownload(video_id, threads) {
 
     await stitchLogs(video_id);
     console.log("DONE!");
+    console.log(items);
 }
 
 function writeFile(file, content) {
@@ -74,76 +84,132 @@ function writeFile(file, content) {
       });
 }
 
+function appendFile(dest_file, source_file) {
+    const data = fs.readFileSync(source_file, {encoding:'utf8', flag:'r'});
+
+    fs.appendFileSync(dest_file, data);
+
+    /*
+    fs.readFile(source_file, function (err, data) {
+        if (err) throw err;
+
+        fs.appendFile(dest_file, data, function (err) {
+            if (err) throw err;
+        });
+    });
+    */
+}
+
 async function stitchLogs(video_id) {
-    var w = fs.createWriteStream(`${video_id}.txt`, {flags: 'a'});
+    const dest_file = `${video_id}.txt`;
+    //var w = fs.createWriteStream(`${video_id}.txt`, {flags: 'a'});
 
     for (item of items) {
-        var r = fs.createReadStream(`${video_id}/${item[0]}`);
-        r.pipe(w);
+        const source_file = `${video_id}/${item[0]}`;
+
+        appendFile(dest_file, source_file);
+
+        //var r = fs.createReadStream(`${video_id}/${item[0]}`);
+        //r.pipe(w);
+
     }
 
     return;
 }
 
-async function logSection(thread, video_id, offset, cursor) {
-    response = null;
-    if (offset != null) {
-        response = await getOffsetComments(video_id, offset)
-    } 
-    else if (cursor != null) {
-        response = await getCursorComments(video_id, cursor)
-        //console.log(response)
-    }
-    if (response == null) {
-        //console.log(`${thread}: REACHED END OF COMMENTS`);
-        return 0;
-    }
-    comments = null;
+async function logChunk(thread, video_id, offset, cursor) {
     try {
-        comments = response['comments'];
-    } catch {
-        console.log(response);
-    }
-
-    if (comments != null) {
-        comment_id = comments[0]['_id'];
-        comment_offset = comments[0]['content_offset_seconds'];
-        last_comment_offset = comment_offset;
-        if (!commentMap.hasOwnProperty(comment_id)) {
-            commentMap[comment_id] = parseFloat(comment_offset);
-
-            stop = false;
-            content = '';
-            for (comment of comments) {
-                if (comment['_id'] != comment_id && commentMap.hasOwnProperty(comment['_id'])) {
-                    //console.log(`${thread}: REACHED END OF SECTION`);
-                    //console.log(`Hit comment logged by: ${commentMap[comment['_id']]}`)
-                    stop = true;
-                    break;
-                }
-                last_comment_offset = comment['content_offset_seconds'];
-                seconds = parseInt(last_comment_offset);
-                comment_line = `[${toTimestamp(seconds)}] <${comment['commenter']['display_name']}> ${comment['message']['body']}`;
-                content += comment_line + "\n";
-                //console.log(comment_line);
-            }
-
-            writeFile(`${video_id}/${comment_id}`, content);
-
-            logged_duration += (parseFloat(last_comment_offset) - parseFloat(comment_offset));
-
-            if (stop) {
+        response = null;
+        if (offset != null) {
+            response = await getOffsetComments(video_id, offset)
+        } 
+        else if (cursor != null) {
+            if (!cursorMap.hasOwnProperty(cursor)) {
+                cursorMap[next_cursor] = thread;
+                response = await getCursorComments(video_id, cursor)
+            } else {
+                console.log('repeat cursor');
                 return;
             }
-
-                
-             
-            cursor = response['_next']
-            await logSection(thread, video_id, null, cursor);
+            //console.log(response)
         }
-    }
+        if (response == null) {
+            //console.log(`${thread}: REACHED END OF COMMENTS`);
+            return 0;
+        }
+        comments = null;
+        try {
+            comments = response['comments'];
+        } catch {
+            console.log(response);
+        }
+    
+        if (comments != null) {
+            comment_id = comments[0]['_id'];
+            comment_offset = comments[0]['content_offset_seconds'];
+            last_comment_offset = comment_offset;
+            if (!commentMap.hasOwnProperty(comment_id)) {
+                commentMap[comment_id] = parseFloat(comment_offset);
+    
+                stop = false;
+                content = '';
+                for (comment of comments) {
+                    if (comment['_id'] != comment_id && commentMap.hasOwnProperty(comment['_id'])) {
+                        //console.log(`${thread}: REACHED END OF SECTION`);
+                        //console.log(`Hit comment logged by: ${commentMap[comment['_id']]}`)
+                        stop = true;
+                        break;
+                    }
 
-    return;
+                    last_comment_offset = comment['content_offset_seconds'];
+                    seconds = parseInt(last_comment_offset);
+                    comment_line = `[${toTimestamp(seconds)}] <${comment['commenter']['display_name']}> ${comment['message']['body']}`;
+                    content += comment_line + "\n";
+                    total_comments += 1;
+                    //console.log(comment_line);
+                }
+
+                next_cursor = response['_next'];
+
+                if (next_cursor) {
+                    content += next_cursor + " " + comment_offset + "\n";
+                }
+                
+                writeFile(`${video_id}/${comment_id}`, content);
+    
+                logged_duration += (parseFloat(last_comment_offset) - parseFloat(comment_offset));
+    
+                if (stop) {
+                    return;
+                }
+    
+                
+                //next_cursor = cursorQueue.shift();
+                
+                if (next_cursor) {
+                    await logChunk(thread, video_id, null, next_cursor);
+                } else {
+                    //console.log(next_cursor);
+                }
+
+                /*
+                if (next_cursor) {
+                    //console.log(`Thread ${thread} taking cursor ${next_cursor}`)
+                    await logChunk(thread, video_id, null, next_cursor);
+                }
+                */
+                
+                //cursor = response['_next'];
+                //await logChunk(thread, video_id, null, cursor);
+                
+            }
+        } else {
+            console.log(response);
+        }
+        //console.log(`Thread ${thread} is returning`)
+    } catch (error) {
+        console.log(error);
+    }
 }
 
 
