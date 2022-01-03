@@ -12,7 +12,7 @@
             <div class="row justify-content-center">
                 <div class="col justify-content-center">
                     <label>Filters</label>
-                    <i class="fas fa-question-circle" title="Space-separated emote names or text. &quot;case-sensitive text&quot; 'any-case text'"></i>
+                    <i class="fas fa-question-circle" title="Space-separated, full/partial emote names. &quot;case-sensitive&quot; 'any-case'"></i>
                 </div>
             </div>
             <textarea class="form-control" name="filters" placeholder="LULW &quot;LUL&quot; 'lul'">{{ filters }}</textarea>
@@ -20,10 +20,11 @@
         <div class="center-div">
             <label>{{ filter_msg }}</label>
              <div class="form-group">
-                <button type="submit" class="btn btn-primary btn-lg mt-3">Analyze</button>
+                <button type="submit" class="btn btn-primary btn-lg mt-3">{{button_name}}</button>
             </div>
         </div>
     </form>
+    <label>{{download_status}}</label>
 </div>
 
 <script>
@@ -46,6 +47,7 @@
                 console.log(asString);
 
                 var link = "{{"/validate/{}".format(video_info['id'])}}?" + asString;
+                //var link = "{{"/download/{}".format(video_info['id'])}}?" + asString;
 
                 //window.open(link, '_blank')
                 window.location.href = link

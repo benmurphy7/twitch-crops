@@ -1,7 +1,10 @@
+import subprocess
 import webbrowser
 from datetime import datetime
 
+import flask
 import gevent.monkey
+from jinja2 import Environment, FileSystemLoader
 from markupsafe import escape
 from werkzeug.utils import redirect
 
@@ -55,6 +58,10 @@ def info(video_id):
 
     video: twitch.Helix.video = collect.video_info
 
+    button_name = "Download"
+    if logs.chat_log_exists(video_id):
+        button_name = "Analyze"
+
     # Converts ISO date to human-readable string
     video_date = datetime.fromisoformat(str(video.created_at).replace('Z', '+00:00')).strftime('%B %d, %Y')
 
@@ -66,8 +73,46 @@ def info(video_id):
         'duration': util.space_timestamp(video.duration)
     }
 
-    return render_template('video_analysis.html', video_info=video_info)
+    return render_template('video_analysis.html', video_info=video_info, button_name=button_name)
 
+
+@app.route('/download/<video_id>', methods=('GET', 'POST'))
+def download(video_id):
+    valid_id = collect.update_video_info(video_id)
+    video: twitch.Helix.video = collect.video_info
+
+    if not video_id or not valid_id:
+        print('Inavlid Video ID')
+        return
+
+    # Converts ISO date to human-readable string
+    video_date = datetime.fromisoformat(str(video.created_at).replace('Z', '+00:00')).strftime('%B %d, %Y')
+
+    video_info = {
+        'id': video_id,
+        'title': video.title,
+        'user_name': video.user_name,
+        'date': video_date,
+        'duration': util.space_timestamp(video.duration)
+    }
+
+    filters = request.args.get('filters', default='', type=None)
+
+    def download_status():
+        print('opening process')
+        proc = subprocess.Popen(['node', 'download.js', video_id],
+                                shell=True,
+                                stdout=subprocess.PIPE
+                                )
+        while proc.poll() is None:
+            print(proc.stdout.readline())
+            yield proc.stdout.readline() #+ '<br/>\n'
+
+    #env = Environment(loader=FileSystemLoader('templates'))
+    #tmpl = env.get_template('video_analysis.html')
+    #return flask.Response(render_template('video_analysis.html', video_info=video_info, filters=filters, download_status=download_status()))
+    return flask.Response(download_status(),
+                          mimetype='text/html')  # text/html is required for most browsers to show the partial page immediately
 
 @app.route('/validate/<video_id>', methods=('GET', 'POST'))
 def validate(video_id):
@@ -78,10 +123,17 @@ def validate(video_id):
         print('Inavlid Video ID')
         return
 
+    if not logs.chat_log_exists(video_id):
+        return redirect(url_for('download', video_id=video_id))
+
+    # Converts ISO date to human-readable string
+    video_date = datetime.fromisoformat(str(video.created_at).replace('Z', '+00:00')).strftime('%B %d, %Y')
+
     video_info = {
         'id': video_id,
         'title': video.title,
         'user_name': video.user_name,
+        'date': video_date,
         'duration': util.space_timestamp(video.duration)
     }
 
@@ -90,10 +142,14 @@ def validate(video_id):
 
     valid, msg = validate_filters(filter_list)
 
-    if valid:
-        webbrowser.open_new_tab(url_for('chart', video_id=video_id, _external=True))
+    button_name = "Download"
+    if logs.chat_log_exists(video_id):
+        button_name = "Analyze"
 
-    return render_template('video_analysis.html', video_info=video_info, filters=filters, filter_msg=msg)
+    if valid:
+        webbrowser.open_new_tab(url_for('chart', video_id=video_id, filters=filters, _external=True))
+
+    return render_template('video_analysis.html', video_info=video_info, filters=filters, filter_msg=msg, button_name=button_name)
 
 
 @app.route('/chart/<video_id>', methods=('GET', 'POST'))
@@ -185,6 +241,7 @@ def validate_filters(filter_list):
             return False, "Error: ' {} ' is not a valid filter!".format(filter)
 
     return True, ""
+
 
 def render_chart(video_id, filter_list=[]):
     collect.update_video_info(video_id)

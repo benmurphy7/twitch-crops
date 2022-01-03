@@ -1,7 +1,7 @@
 const fs = require('fs');
 const XMLHttpRequest = require('xhr2');
 
-const video_id = '1249134654';
+const video_id = String(process.argv[2]);
 const clientInfo = fs.readFileSync('clientInfo.txt', 'utf8').split('\n');
 var token;
 
@@ -24,11 +24,11 @@ mainFlow();
 
 async function mainFlow() {
     token = await getAccessToken()
-    multiThreadDownload(video_id, 200)
+    multiThreadDownload(200)
 }
 
-
-async function multiThreadDownload(video_id, threads) {
+//TODO: Fix random slowdown towards end of download (not a complete hangup, but significant delay...sometimes)
+async function multiThreadDownload(threads) {
     if (fs.existsSync(video_id)) {
         fs.rmSync(video_id, { recursive: true, force: true });
     }
@@ -48,7 +48,7 @@ async function multiThreadDownload(video_id, threads) {
     for (let i=threads; i > 0; i--) {
         offset = section_dist * (i-1);
         //console.log(`Thread ${i} = offset: ${offset}`);
-        promiseArray.push(logChunk(i, video_id, offset, null));
+        promiseArray.push(logChunk(i, offset, null));
     }
 
     await Promise.all(promiseArray);
@@ -99,8 +99,8 @@ function appendFile(dest_file, source_file) {
     */
 }
 
-async function stitchLogs(video_id) {
-    const dest_file = `${video_id}.txt`;
+async function stitchLogs() {
+    const dest_file = `app/resources/downloads/${video_id}.log`;
     //var w = fs.createWriteStream(`${video_id}.txt`, {flags: 'a'});
 
     for (item of items) {
@@ -116,7 +116,7 @@ async function stitchLogs(video_id) {
     return;
 }
 
-async function logChunk(thread, video_id, offset, cursor) {
+async function logChunk(thread, offset, cursor) {
     try {
         response = null;
         if (offset != null) {
@@ -202,7 +202,7 @@ async function logChunk(thread, video_id, offset, cursor) {
             //next_cursor = cursorQueue.shift();
             
             if (next_cursor) {
-                await logChunk(thread, video_id, null, next_cursor);
+                await logChunk(thread, null, next_cursor);
             } else {
                 //console.log(next_cursor);
             }
@@ -226,7 +226,7 @@ async function logChunk(thread, video_id, offset, cursor) {
 
 async function showProgress()
 {
-    process.stdout.write(`Downloading: ${(logged_duration/total_duration) * 100}%` + "\r");
+    process.stdout.write(`Downloading: ${roundTo(2, (logged_duration/total_duration) * 100)}%` + "\n"); //+ "\r"
 }
 
 
@@ -245,7 +245,7 @@ async function getAccessToken() {
     return JSON.parse(response);
 }
 
-async function getSeconds(video_id) {
+async function getSeconds() {
     var url = new URL(`https://api.twitch.tv/helix/videos`);
     url.searchParams.append('id', video_id);
 
@@ -331,6 +331,10 @@ function makeRequest(xhr) {
 // TODO: Handle times above 24 hours
 function toTimestamp(seconds) {
     return new Date(1000 * seconds).toISOString().substr(11, 8)
+}
+
+function roundTo(places, num) {    
+    return +(Math.round(num + `e+${places}`)  + `e-${places}`);
 }
 
 
