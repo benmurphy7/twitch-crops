@@ -8,6 +8,7 @@ var token;
 items = [];
 
 commentMap = {}
+chunkMap = {}
 
 cursorMap = {}
 cursorQueue = []
@@ -60,16 +61,18 @@ async function multiThreadDownload(video_id, threads) {
 
     // Stitch together section files
 
-    items = Object.keys(commentMap).map(function(key) {
-        return [key, commentMap[key]];
+    items = Object.keys(chunkMap).map(function(key) {
+        return [key, chunkMap[key]];
     });
     items.sort(function(first, second) {
         return first[1] - second[1];
     });
 
+    //console.log(items);
+
     await stitchLogs(video_id);
     console.log("DONE!");
-    console.log(items);
+    
 }
 
 function writeFile(file, content) {
@@ -77,11 +80,7 @@ function writeFile(file, content) {
         return;
     }
 
-    fs.writeFile(file, content, function (err,data) {
-        if (err) {
-          return console.log(err);
-        }
-      });
+    fs.writeFileSync(file, content);
 }
 
 function appendFile(dest_file, source_file) {
@@ -145,68 +144,80 @@ async function logChunk(thread, video_id, offset, cursor) {
         }
     
         if (comments != null) {
-            comment_id = comments[0]['_id'];
+            stop = true;
+            chunk_id = comments[0]['_id'];
             comment_offset = comments[0]['content_offset_seconds'];
-            last_comment_offset = comment_offset;
-            if (!commentMap.hasOwnProperty(comment_id)) {
-                commentMap[comment_id] = parseFloat(comment_offset);
-    
-                stop = false;
-                content = '';
-                for (comment of comments) {
-                    if (comment['_id'] != comment_id && commentMap.hasOwnProperty(comment['_id'])) {
-                        //console.log(`${thread}: REACHED END OF SECTION`);
-                        //console.log(`Hit comment logged by: ${commentMap[comment['_id']]}`)
-                        stop = true;
-                        break;
-                    }
 
-                    last_comment_offset = comment['content_offset_seconds'];
-                    seconds = parseInt(last_comment_offset);
-                    comment_line = `[${toTimestamp(seconds)}] <${comment['commenter']['display_name']}> ${comment['message']['body']}`;
-                    content += comment_line + "\n";
-                    total_comments += 1;
-                    //console.log(comment_line);
+            if (!commentMap.hasOwnProperty(chunk_id)) {
+                if (!chunkMap.hasOwnProperty(chunk_id)) {
+                    chunkMap[chunk_id] = parseFloat(comment_offset);
+                    stop = false;
                 }
-
-                next_cursor = response['_next'];
-
-                if (next_cursor) {
-                    content += next_cursor + " " + comment_offset + "\n";
-                }
-                
-                writeFile(`${video_id}/${comment_id}`, content);
-    
-                logged_duration += (parseFloat(last_comment_offset) - parseFloat(comment_offset));
-    
-                if (stop) {
-                    return;
-                }
-    
-                
-                //next_cursor = cursorQueue.shift();
-                
-                if (next_cursor) {
-                    await logChunk(thread, video_id, null, next_cursor);
-                } else {
-                    //console.log(next_cursor);
-                }
-
-                /*
-                if (next_cursor) {
-                    //console.log(`Thread ${thread} taking cursor ${next_cursor}`)
-                    await logChunk(thread, video_id, null, next_cursor);
-                }
-                */
-                
-                //cursor = response['_next'];
-                //await logChunk(thread, video_id, null, cursor);
-                
             }
-        } else {
-            console.log(response);
-        }
+
+            if (stop) {
+                return;
+            }
+
+            content = '';
+            for (comment of comments) {
+                comment_id = comment['_id'];
+                if (commentMap.hasOwnProperty(comment_id)) {
+                    //console.log(`${thread}: REACHED END OF SECTION`);
+                    //console.log(`Hit comment logged by: ${commentMap[comment['_id']]}`)
+                    stop = true;
+                    break;
+                } else {
+                    commentMap[comment_id] = parseFloat(comment_offset);
+                }
+
+                last_comment_offset = comment['content_offset_seconds'];
+                seconds = parseInt(last_comment_offset);
+                comment_line = `[${toTimestamp(seconds)}] <${comment['commenter']['display_name']}> ${comment['message']['body']}`;
+                content += comment_line + "\n";
+                total_comments += 1;
+                //console.log(comment_line);
+            }
+
+            next_cursor = response['_next'];
+
+            if (next_cursor) {
+                content += next_cursor + " " + comment_offset + "\n";
+            }
+            
+            try {
+            writeFile(`${video_id}/${chunk_id}`, content);
+            } catch (err) {
+                console.log('write error');
+                console.log(err);
+            }
+
+            logged_duration += (parseFloat(last_comment_offset) - parseFloat(comment_offset));
+
+            if (stop) {
+                return;
+            }
+
+            
+            //next_cursor = cursorQueue.shift();
+            
+            if (next_cursor) {
+                await logChunk(thread, video_id, null, next_cursor);
+            } else {
+                //console.log(next_cursor);
+            }
+
+            /*
+            if (next_cursor) {
+                //console.log(`Thread ${thread} taking cursor ${next_cursor}`)
+                await logChunk(thread, video_id, null, next_cursor);
+            }
+            */
+            
+            //cursor = response['_next'];
+            //await logChunk(thread, video_id, null, cursor);
         //console.log(`Thread ${thread} is returning`)
+        } 
     } catch (error) {
         console.log(error);
     }
@@ -283,7 +294,7 @@ async function getCursorComments(video_id, cursor) {
 function makeRequest(xhr) {
     return new Promise(function (resolve, reject) {
         xhr.onload = function () {
-            if (this.status >= 200 && this.status < 300) {
+            if (this.status == 200) { //this.status >= 200 && this.status < 300
                 //console.log(this.status);
                 resolve(xhr.response);
             } else {
