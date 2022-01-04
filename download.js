@@ -5,13 +5,11 @@ const video_id = String(process.argv[2]);
 const clientInfo = fs.readFileSync('clientInfo.txt', 'utf8').split('\n');
 var token;
 
-items = [];
-
 commentMap = {}
 chunkMap = {}
-
 cursorMap = {}
 cursorQueue = []
+chunks = []
 
 const progressUpdate = setInterval(showProgress, 500)
 
@@ -27,7 +25,7 @@ async function mainFlow() {
     multiThreadDownload(200)
 }
 
-//TODO: Fix random slowdown towards end of download (not a complete hangup, but significant delay...sometimes)
+//TODO: Fix random slowdown near end of download (not a complete hangup, but significant delay...sometimes)
 async function multiThreadDownload(threads) {
     if (fs.existsSync(video_id)) {
         fs.rmSync(video_id, { recursive: true, force: true });
@@ -59,20 +57,41 @@ async function multiThreadDownload(threads) {
     console.log(`total comments: ${total_comments}`)
     //console.log(cursorQueue);
 
-    // Stitch together section files
-
-    items = Object.keys(chunkMap).map(function(key) {
+    
+    // Sort chunks (by first comment offset)
+    chunks = Object.keys(chunkMap).map(function(key) {
         return [key, chunkMap[key]];
     });
-    items.sort(function(first, second) {
+    chunks.sort(function(first, second) {
         return first[1] - second[1];
     });
 
-    //console.log(items);
+    // Read cursor of second to last chunk, append to end of last chunk
+    const chunkFileToCopy = `${video_id}/${chunks[chunks.length - 2][0]}`;
+    const chunkToCopy = readFile(chunkFileToCopy);
+    //console.log(chunkToCopy);
+    lines = chunkToCopy.split("\n");
+    cursorToCopy = lines[lines.length - 2] + "\n";
+    //console.log(cursorToCopy);
 
-    await stitchLogs(video_id);
-    console.log("DONE!");
+    const chunkFileToUpdate = `${video_id}/${chunks[chunks.length - 1][0]}`;
+    const chunkToUpdate = readFile(chunkFileToUpdate);
+    lines = chunkToUpdate.split("\n");
+    lines[lines.length - 1] = cursorToCopy;
+    let updatedChunk = lines.join("\n");
+    console.log(updatedChunk);
+    writeFile(chunkFileToUpdate, updatedChunk)
     
+
+    // Stitch together chunk files
+    await stitchLogs(video_id);
+
+     // Cleanup
+     if (fs.existsSync(video_id)) {
+        fs.rmSync(video_id, { recursive: true, force: true });
+    }
+
+    console.log("DONE!");
 }
 
 function writeFile(file, content) {
@@ -83,34 +102,25 @@ function writeFile(file, content) {
     fs.writeFileSync(file, content);
 }
 
+function readFile(file) {
+    return fs.readFileSync(file, {encoding:'utf8', flag:'r'});
+}
+
 function appendFile(dest_file, source_file) {
-    const data = fs.readFileSync(source_file, {encoding:'utf8', flag:'r'});
+    const data = readFile(source_file);
+    appendData(dest_file, data);
+}
 
+function appendData(dest_file, data) {
     fs.appendFileSync(dest_file, data);
-
-    /*
-    fs.readFile(source_file, function (err, data) {
-        if (err) throw err;
-
-        fs.appendFile(dest_file, data, function (err) {
-            if (err) throw err;
-        });
-    });
-    */
 }
 
 async function stitchLogs() {
     const dest_file = `app/resources/downloads/${video_id}.log`;
-    //var w = fs.createWriteStream(`${video_id}.txt`, {flags: 'a'});
 
-    for (item of items) {
-        const source_file = `${video_id}/${item[0]}`;
-
+    for (chunk of chunks) {
+        const source_file = `${video_id}/${chunk[0]}`;
         appendFile(dest_file, source_file);
-
-        //var r = fs.createReadStream(`${video_id}/${item[0]}`);
-        //r.pipe(w);
-
     }
 
     return;
@@ -182,7 +192,7 @@ async function logChunk(thread, offset, cursor) {
             next_cursor = response['_next'];
 
             if (next_cursor) {
-                content += next_cursor + " " + comment_offset + "\n";
+                content += next_cursor + "\n"; //next_cursor + " " + comment_offset + "\n";
             }
             
             try {
