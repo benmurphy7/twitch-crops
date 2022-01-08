@@ -20,12 +20,13 @@
         <div class="center-div">
             <label>{{ filter_msg }}</label>
              <div class="form-group">
-                <button type="submit" class="btn btn-primary btn-lg mt-3">{{button_name}}</button>
+                <button id="submit" type="submit" class="btn btn-primary btn-lg mt-3">Analyze</button>
             </div>
         </div>
     </form>
-    <label>{{download_status}}</label>
 </div>
+
+<div id="result"></div>
 
 <script>
         const form = document.forms.options;
@@ -46,13 +47,36 @@
                         .join('&');
                 console.log(asString);
 
-                var link = "{{"/validate/{}".format(video_info['id'])}}?" + asString;
+                //var link = "{{"/validate/{}".format(video_info['id'])}}?" + asString;
                 //var link = "{{"/download/{}".format(video_info['id'])}}?" + asString;
 
                 //window.open(link, '_blank')
-                window.location.href = link
-        }
+                //window.location.href = link
 
+                console.log("Submit handling");
+                document.getElementById("submit").disabled = true;
+
+                var evtSource = new EventSource("{{"/validate/{}".format(video_info['id'])}}?" + asString);
+
+                evtSource.onmessage=function(event) {
+                    console.log("msg received");
+                    console.log(`JS evtSource message received: ${event.data}`);
+                    document.getElementById("result").innerHTML=event.data;
+                    if (event.data.includes("Error") || event.data == "") {
+                        console.log("killing event source");
+                        evtSource.close();
+
+                        document.getElementById("submit").disabled = false;
+                    }
+                };
+
+                if(typeof(EventSource)!=="undefined") {
+                    console.log("JS source call");
+
+                } else {
+                    document.getElementById("result").innerHTML="Sorry, your browser does not support server-sent events...";
+                }
+        }
 </script>
 {% endblock %}
 

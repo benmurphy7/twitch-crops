@@ -3,6 +3,9 @@ const XMLHttpRequest = require('xhr2');
 
 const video_id = String(process.argv[2]);
 const clientInfo = fs.readFileSync('clientInfo.txt', 'utf8').split('\n');
+
+const logs_path = 'app/resources/downloads/';
+
 var token;
 
 commentMap = {}
@@ -11,10 +14,7 @@ cursorMap = {}
 cursorQueue = []
 chunks = []
 
-const progressUpdate = setInterval(showProgress, 500)
-
 var total_comments = 0;
-
 var total_duration;
 var logged_duration;
 
@@ -25,21 +25,34 @@ async function mainFlow() {
     multiThreadDownload(200)
 }
 
-//TODO: Fix random slowdown near end of download (not a complete hangup, but significant delay...sometimes)
+// TODO: Fix random slowdown near end of download (not a complete hangup, but significant delay...sometimes)
 async function multiThreadDownload(threads) {
-    if (fs.existsSync(video_id)) {
-        fs.rmSync(video_id, { recursive: true, force: true });
-    }
-
     if (!fs.existsSync(video_id)){
         fs.mkdirSync(video_id);
     }
 
+    if (fs.existsSync(`${logs_path}${video_id}.log`)) {
+        console.log('Log already exists');
+        process.exit(1);
+        // Sync
+
+        // 1. Get final cursor from log file (second to last line)
+        // 2. Get last logged comment
+        // 3. Fetch cursor chunk
+        // 4. Start chunk after last logged comment (also store in map)
+        // 5. Get timestamp of last comment in fetched chunk
+        // 6. Download remaining log starting at offset
+        // 7. Append all chunks to existing log (same as before)
+    }
+
+    // Download
     const seconds = await getSeconds(video_id);
+    const section_dist = seconds / threads
     total_duration = seconds;
     logged_duration = 0;
+
     showProgress();
-    const section_dist = seconds / threads
+    const progressUpdate = setInterval(showProgress, 500);
 
     var promiseArray = [];
 
@@ -54,7 +67,7 @@ async function multiThreadDownload(threads) {
     clearInterval(progressUpdate);
     showProgress();
     console.log("Download Complete!")
-    console.log(`total comments: ${total_comments}`)
+    //console.log(`total comments: ${total_comments}`)
     //console.log(cursorQueue);
 
     
@@ -79,7 +92,7 @@ async function multiThreadDownload(threads) {
     lines = chunkToUpdate.split("\n");
     lines[lines.length - 1] = cursorToCopy;
     let updatedChunk = lines.join("\n");
-    console.log(updatedChunk);
+    //console.log(updatedChunk);
     writeFile(chunkFileToUpdate, updatedChunk)
     
 
@@ -91,7 +104,7 @@ async function multiThreadDownload(threads) {
         fs.rmSync(video_id, { recursive: true, force: true });
     }
 
-    console.log("DONE!");
+    //console.log("DONE!");
 }
 
 function writeFile(file, content) {
@@ -116,7 +129,7 @@ function appendData(dest_file, data) {
 }
 
 async function stitchLogs() {
-    const dest_file = `app/resources/downloads/${video_id}.log`;
+    const dest_file = `${logs_path}${video_id}.log`;
 
     for (chunk of chunks) {
         const source_file = `${video_id}/${chunk[0]}`;
@@ -233,15 +246,12 @@ async function logChunk(thread, offset, cursor) {
     }
 }
 
-
 async function showProgress()
 {
     process.stdout.write(`Downloading: ${roundTo(2, (logged_duration/total_duration) * 100)}%` + "\n"); //+ "\r"
 }
 
-
-
-
+// TODO: Cache access token?
 async function getAccessToken() {
     var url = new URL(`https://id.twitch.tv/oauth2/token`);
     url.searchParams.append('client_id', clientInfo[0]);
@@ -300,7 +310,6 @@ async function getCursorComments(video_id, cursor) {
     return JSON.parse(await makeRequest(xhr));
 }
 
-
 function makeRequest(xhr) {
     return new Promise(function (resolve, reject) {
         xhr.onload = function () {
@@ -327,7 +336,6 @@ function makeRequest(xhr) {
     });
   }
 
-
   function toSeconds(duration) {
     if (duration.indexOf('h') == -1) {
         duration = '0h' + duration;
@@ -346,38 +354,3 @@ function toTimestamp(seconds) {
 function roundTo(places, num) {    
     return +(Math.round(num + `e+${places}`)  + `e-${places}`);
 }
-
-
-/*
-https://api.twitch.tv/v5/videos/{video_id}/comments
-
-let xhr = new XMLHttpRequest();
-
-
-
-
-function makeRequest(method, url) {
-    return new Promise(function (resolve, reject) {
-        let xhr = new XMLHttpRequest();
-        xhr.open(method, url);
-        xhr.setRequestHeader('Cache-Control', 'no-cache');
-        xhr.onload = function () {
-            if (this.status >= 200 && this.status < 300) {
-                resolve(xhr.response);
-            } else {
-                reject({
-                    status: this.status,
-                    statusText: xhr.statusText
-                });
-            }
-        };
-        xhr.onerror = function () {
-            reject({
-                status: this.status,
-                statusText: xhr.statusText
-            });
-        };
-        xhr.send();
-    });
-  }
-  */

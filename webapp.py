@@ -1,4 +1,5 @@
 import subprocess
+import time
 import traceback
 import webbrowser
 from datetime import datetime
@@ -14,7 +15,8 @@ from common.util import get_filter_list
 gevent.monkey.patch_all()
 
 import twitch
-from flask import Flask, render_template, request, render_template_string, url_for
+from flask import Flask, render_template, request, render_template_string, url_for, Response, stream_with_context, \
+    jsonify
 import ssl
 
 from data import collect, logs, analyze, images
@@ -57,10 +59,6 @@ def info(video_id):
             video_info=None,
             id_msg="Error: '{}' is not a valid ID!".format(video_id))
 
-    button_name = "Download"
-    if logs.chat_log_exists(video_id):
-        button_name = "Analyze"
-
     # Converts ISO date to human-readable string
     video_date = datetime.fromisoformat(str(video.created_at).replace('Z', '+00:00')).strftime('%B %d, %Y')
 
@@ -72,9 +70,10 @@ def info(video_id):
         'duration': util.space_timestamp(video.duration)
     }
 
-    return render_template('video_analysis.html', video_info=video_info, button_name=button_name)
+    return render_template('video_analysis.html', video_info=video_info)
 
 
+# TODO: Remove
 @app.route('/download/<video_id>', methods=('GET', 'POST'))
 def download(video_id):
     video: twitch.Helix.video = collect.get_video_info(video_id)
@@ -103,13 +102,18 @@ def download(video_id):
                                 )
         while proc.poll() is None:
             print(proc.stdout.readline())
-            yield proc.stdout.readline() #+ '<br/>\n'
+            yield proc.stdout.readline()  # + '<br/>\n'
 
-    #env = Environment(loader=FileSystemLoader('templates'))
-    #tmpl = env.get_template('video_analysis.html')
-    #return flask.Response(render_template('video_analysis.html', video_info=video_info, filters=filters, download_status=download_status()))
-    return flask.Response(download_status(),
-                          mimetype='text/html')  # text/html is required for most browsers to show the partial page immediately
+    # env = Environment(loader=FileSystemLoader('templates'))
+    # tmpl = env.get_template('video_analysis.html')
+    # return flask.Response(render_template('video_analysis.html', video_info=video_info, filters=filters, download_status=download_status()))
+
+    return Response(download_status(), mimetype='text/event-stream')
+
+    # return Response(stream_with_context(stream_template('video_analysis.html', video_info=video_info, filters=filters, download_status=download_status())))
+
+    # return flask.Response(download_status(), mimetype='text/html')  # text/html is required for most browsers to show the partial page immediately
+
 
 @app.route('/validate/<video_id>', methods=('GET', 'POST'))
 def validate(video_id):
@@ -118,8 +122,24 @@ def validate(video_id):
         print('Inavlid Video ID')
         return
 
+    def download_status():
+        print('opening process')
+        proc = subprocess.Popen(['node', 'download.js', video_id],
+                                shell=True,
+                                stdout=subprocess.PIPE
+                                )
+        while proc.poll() is None:
+            stdout_line = proc.stdout.readline().decode('UTF-8')
+            if stdout_line:
+                yield "data: %s\n\n" % stdout_line
+
+    def message_stream(message):
+        yield "data: %s\n\n" % message
+        return
+
     if not logs.chat_log_exists(video_id):
-        return redirect(url_for('download', video_id=video_id))
+        return Response(download_status(), mimetype='text/event-stream')
+        # return redirect(url_for('download', video_id=video_id))
 
     # Converts ISO date to human-readable string
     video_date = datetime.fromisoformat(str(video.created_at).replace('Z', '+00:00')).strftime('%B %d, %Y')
@@ -137,14 +157,14 @@ def validate(video_id):
 
     valid, msg = validate_filters(video, filter_list)
 
-    button_name = "Download"
-    if logs.chat_log_exists(video_id):
-        button_name = "Analyze"
+    print("VALID: " + str(valid))
 
     if valid:
         webbrowser.open_new_tab(url_for('chart', video_id=video_id, filters=filters, _external=True))
 
-    return render_template('video_analysis.html', video_info=video_info, filters=filters, filter_msg=msg, button_name=button_name)
+    print("rendering with msg: " + msg)
+    return Response(message_stream(msg), mimetype='text/event-stream')
+    # return render_template('video_analysis.html', video_info=video_info, filters=filters, filter_msg=msg)
 
 
 @app.route('/chart/<video_id>', methods=('GET', 'POST'))
