@@ -38,17 +38,30 @@
 
         form.addEventListener('submit', handleSubmit);
 
-        function handleSubmit(event) {
-                event.preventDefault();
-                const formData = new FormData(event.target);
-                const data = [...formData.entries()];
-                const asString = data
-                        .map(x => `${encodeURIComponent(x[0])}=${encodeURIComponent(x[1])}`)
-                        .join('&');
-                console.log(asString);
+        function formDataString(formData) {
+            const data = [...formData.entries()];
+            return queryString(data);
+        }
 
-                //var link = "{{"/validate/{}".format(video_info['id'])}}?" + asString;
-                //var link = "{{"/download/{}".format(video_info['id'])}}?" + asString;
+        function queryString(data) {
+            return data
+                    .map(x => `${encodeURIComponent(x[0])}=${encodeURIComponent(x[1])}`)
+                    .join('&');
+        }
+
+        function handleSubmit(event) {
+                //data = [];
+
+                event.preventDefault();
+                var formData = new FormData(event.target);
+                formData.set('stream', "true");
+
+                var qString = formDataString(formData);
+
+                console.log(qString);
+
+                var link = "{{"/validate/{}".format(video_info['id'])}}?"; //+ qString;
+                //var link = "{{"/download/{}".format(video_info['id'])}}?" + qString;
 
                 //window.open(link, '_blank')
                 //window.location.href = link
@@ -56,16 +69,30 @@
                 console.log("Submit handling");
                 document.getElementById("submit").disabled = true;
 
-                var evtSource = new EventSource("{{"/validate/{}".format(video_info['id'])}}?" + asString);
+                var evtSource = new EventSource(link + qString);
 
                 evtSource.onmessage=function(event) {
                     console.log("msg received");
                     console.log(`JS evtSource message received: ${event.data}`);
-                    document.getElementById("result").innerHTML=event.data;
-                    if (event.data.includes("Error") || event.data == "") {
-                        console.log("killing event source");
+
+                    if (!event.data.includes("_EOS_")) {
+                        document.getElementById("result").innerHTML=event.data;
+                    } else {
+                        console.log("killing event source : EOS");
                         evtSource.close();
 
+                        document.getElementById("submit").disabled = false;
+                        document.getElementById("result").innerHTML="";
+
+                        formData.set('stream', "false");
+                        qString = formDataString(formData);
+                        window.location.href = link + qString;
+                        return;
+                    }
+
+                    if (event.data.includes("Error")) {
+                        console.log("killing event source");
+                        evtSource.close();
                         document.getElementById("submit").disabled = false;
                     }
                 };

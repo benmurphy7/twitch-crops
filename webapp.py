@@ -117,10 +117,14 @@ def download(video_id):
 
 @app.route('/validate/<video_id>', methods=('GET', 'POST'))
 def validate(video_id):
+    print('VALIDATE CALL')
     video: twitch.Helix.video = collect.get_video_info(video_id)
     if not video_id or not video:
         print('Inavlid Video ID')
         return
+
+    def eos():
+        yield "data: %s\n\n" % "_EOS_"
 
     def download_status():
         print('opening process')
@@ -132,6 +136,8 @@ def validate(video_id):
             stdout_line = proc.stdout.readline().decode('UTF-8')
             if stdout_line:
                 yield "data: %s\n\n" % stdout_line
+
+        eos()
 
     def message_stream(message):
         yield "data: %s\n\n" % message
@@ -159,12 +165,21 @@ def validate(video_id):
 
     print("VALID: " + str(valid))
 
-    if valid:
-        webbrowser.open_new_tab(url_for('chart', video_id=video_id, filters=filters, _external=True))
+    stream = request.args.get('stream', default='', type=None)
 
-    print("rendering with msg: " + msg)
-    return Response(message_stream(msg), mimetype='text/event-stream')
-    # return render_template('video_analysis.html', video_info=video_info, filters=filters, filter_msg=msg)
+    print('stream: ' + stream);
+
+    if stream == 'true':
+        if valid:
+            return Response(eos(), mimetype='text/event-stream')
+        else:
+            return Response(message_stream(msg), mimetype='text/event-stream')
+
+    else:
+        if valid:
+            webbrowser.open_new_tab(url_for('chart', video_id=video_id, filters=filters, _external=True))
+
+    return render_template('video_analysis.html', video_info=video_info, filters=filters, filter_msg=msg)
 
 
 @app.route('/chart/<video_id>', methods=('GET', 'POST'))
