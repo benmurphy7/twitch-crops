@@ -197,9 +197,9 @@ def chart_proxy(video_id):
 
     filters = request.args.get('filters', default='', type=None)
 
-    webbrowser.open_new_tab(url_for('chart', video_id=video_id, video_info=video_info, filters=filters, _external=True))
-
-    return render_template('video_analysis.html', video_info=video_info, filters=filters)
+    #webbrowser.open_new_tab(url_for('chart', video_id=video_id, video_info=video_info, filters=filters, _external=True))
+    return redirect(url_for('chart', video_id=video_id, video_info=video_info, filters=filters))
+    #return render_template('video_analysis.html', video_info=video_info, filters=filters)
 
 @app.route('/chart/<video_id>', methods=('GET', 'POST'))
 def chart(video_id):
@@ -305,8 +305,10 @@ if __name__ == '__main__':
     collect.client = collect.initialize_client()
     # run() method of Flask class runs the application
     # on the local development server.
-    context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
-    context.verify_mode = ssl.CERT_REQUIRED
+
+    #context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+    #context.verify_mode = ssl.CERT_REQUIRED
     # context.load_verify_locations("ca.crt")
+
     context = ('twitchcrops_tv.crt', 'twitchcrops_tv.key')  # certificate and key files
     app.run(host='0.0.0.0', port=443, ssl_context=context)

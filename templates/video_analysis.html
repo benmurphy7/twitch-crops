@@ -77,12 +77,11 @@
                         console.log("killing event source : EOS");
                         evtSource.close();
 
-                        document.getElementById("submit").disabled = false;
+                        //document.getElementById("submit").disabled = false;
                         document.getElementById("result").innerHTML="";
 
                         window.location.href = chart_url;
-                        // Triggers pop-up block??
-                        //window.open(chart_url, "_blank");
+
                     } else {
                         document.getElementById("result").innerHTML=event.data;
 
