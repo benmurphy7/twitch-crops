@@ -54,14 +54,12 @@
 
                 event.preventDefault();
                 var formData = new FormData(event.target);
-                formData.set('stream', "true");
-
                 var qString = formDataString(formData);
 
                 console.log(qString);
 
-                var link = "{{"/validate/{}".format(video_info['id'])}}?"; //+ qString;
-                //var link = "{{"/download/{}".format(video_info['id'])}}?" + qString;
+                var validate_url = "{{"/validate/{}".format(video_info['id'])}}?" + qString;
+                var chart_url = "{{"/chart-proxy/{}".format(video_info['id'])}}?" + qString;
 
                 //window.open(link, '_blank')
                 //window.location.href = link
@@ -69,31 +67,30 @@
                 console.log("Submit handling");
                 document.getElementById("submit").disabled = true;
 
-                var evtSource = new EventSource(link + qString);
+                var evtSource = new EventSource(validate_url);
 
                 evtSource.onmessage=function(event) {
                     console.log("msg received");
                     console.log(`JS evtSource message received: ${event.data}`);
 
-                    if (!event.data.includes("_EOS_")) {
-                        document.getElementById("result").innerHTML=event.data;
-                    } else {
+                    if (event.data.includes("_EOS_")) {
                         console.log("killing event source : EOS");
                         evtSource.close();
 
                         document.getElementById("submit").disabled = false;
                         document.getElementById("result").innerHTML="";
 
-                        formData.set('stream', "false");
-                        qString = formDataString(formData);
-                        window.location.href = link + qString;
-                        return;
-                    }
+                        window.location.href = chart_url;
+                        // Triggers pop-up block??
+                        //window.open(chart_url, "_blank");
+                    } else {
+                        document.getElementById("result").innerHTML=event.data;
 
-                    if (event.data.includes("Error")) {
-                        console.log("killing event source");
-                        evtSource.close();
-                        document.getElementById("submit").disabled = false;
+                        if (event.data.includes("Error")) {
+                            console.log("killing event source - error");
+                            evtSource.close();
+                            document.getElementById("submit").disabled = false;
+                        }
                     }
                 };
 

@@ -67,6 +67,7 @@ async function multiThreadDownload(threads) {
     clearInterval(progressUpdate);
     showProgress();
     console.log("Download Complete!")
+    console.log("_EOS_")
     //console.log(`total comments: ${total_comments}`)
     //console.log(cursorQueue);
 

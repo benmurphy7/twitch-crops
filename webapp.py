@@ -137,15 +137,52 @@ def validate(video_id):
             if stdout_line:
                 yield "data: %s\n\n" % stdout_line
 
-        eos()
-
     def message_stream(message):
         yield "data: %s\n\n" % message
         return
 
-    if not logs.chat_log_exists(video_id):
-        return Response(download_status(), mimetype='text/event-stream')
-        # return redirect(url_for('download', video_id=video_id))
+    """
+    # Converts ISO date to human-readable string
+    video_date = datetime.fromisoformat(str(video.created_at).replace('Z', '+00:00')).strftime('%B %d, %Y')
+
+    video_info = {
+        'id': video_id,
+        'title': video.title,
+        'user_name': video.user_name,
+        'date': video_date,
+        'duration': util.space_timestamp(video.duration)
+    }
+    """
+
+    filters = request.args.get('filters', default='', type=None)
+    filter_list = get_filter_list(filters)
+
+    valid, msg = validate_filters(video, filter_list)
+
+    if valid:
+        if logs.chat_log_exists(video_id):
+            return Response(eos(), mimetype='text/event-stream')
+        else:
+            return Response(download_status(), mimetype='text/event-stream')
+    else:
+        return Response(message_stream(msg), mimetype='text/event-stream')
+
+    # Just call this if valid response from event-stream (validate only returns event streams)
+    """
+    else:
+        if valid:
+            webbrowser.open_new_tab(url_for('chart', video_id=video_id, filters=filters, _external=True))
+
+    return render_template('video_analysis.html', video_info=video_info, filters=filters, filter_msg=msg)
+    """
+
+# Request point to open chart in new tab (handling this in javascript is detected as a popup and gets blocked)
+@app.route('/chart-proxy/<video_id>', methods=('GET', 'POST'))
+def chart_proxy(video_id):
+    video: twitch.Helix.video = collect.get_video_info(video_id)
+    if not video_id or not video:
+        print('Inavlid Video ID')
+        return
 
     # Converts ISO date to human-readable string
     video_date = datetime.fromisoformat(str(video.created_at).replace('Z', '+00:00')).strftime('%B %d, %Y')
@@ -159,28 +196,10 @@ def validate(video_id):
     }
 
     filters = request.args.get('filters', default='', type=None)
-    filter_list = get_filter_list(filters)
 
-    valid, msg = validate_filters(video, filter_list)
+    webbrowser.open_new_tab(url_for('chart', video_id=video_id, video_info=video_info, filters=filters, _external=True))
 
-    print("VALID: " + str(valid))
-
-    stream = request.args.get('stream', default='', type=None)
-
-    print('stream: ' + stream);
-
-    if stream == 'true':
-        if valid:
-            return Response(eos(), mimetype='text/event-stream')
-        else:
-            return Response(message_stream(msg), mimetype='text/event-stream')
-
-    else:
-        if valid:
-            webbrowser.open_new_tab(url_for('chart', video_id=video_id, filters=filters, _external=True))
-
-    return render_template('video_analysis.html', video_info=video_info, filters=filters, filter_msg=msg)
-
+    return render_template('video_analysis.html', video_info=video_info, filters=filters)
 
 @app.route('/chart/<video_id>', methods=('GET', 'POST'))
 def chart(video_id):
@@ -189,13 +208,11 @@ def chart(video_id):
         print('Inavlid Video ID')
         return
 
-    video_info = {
-        'id': video_id,
-        'title': video.title,
-        'user_name': video.user_name,
-        'duration': util.space_timestamp(video.duration)
-    }
+    video_info = request.args.get('video_info', default='', type=None)
+    print('passed video_info')
+    print(video_info)
 
+    # Filters should already be validated from /validate route
     filters = request.args.get('filters', default='', type=None)
     filter_list = get_filter_list(filters)
 
@@ -206,6 +223,7 @@ def chart(video_id):
 
     render_str, code = render_chart(video, filter_list)
 
+    # Checking filters is redundant since it is handled by /validate route
     if code != 0:
         return render_template('video_analysis.html', video_info=video_info, filters=filters, filter_msg=render_str)
 
@@ -218,6 +236,8 @@ def chart(video_id):
     chart_html_str = title_str + zoom_str + style_str + chart_title + render_str
 
     # return render_template('chart_view.html', video_info=video_info)
+
+    # TODO: Open in new tab
     return render_template_string(chart_html_str, video_info=video_info)
 
 
