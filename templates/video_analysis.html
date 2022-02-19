@@ -26,7 +26,10 @@
     </form>
 </div>
 
-<div id="result"></div>
+<div class="status-wrapper">
+    <div id="status"></div>
+    <div id="loading-icon" class="spinner"></div>
+</div>
 
 <script>
         const form = document.forms.options;
@@ -49,7 +52,19 @@
                     .join('&');
         }
 
+        function showSpinner(msg) {
+            var status = document.getElementById('status');
+            status.textContent = msg;
+
+            var loader = document.getElementById('loading-icon');
+            loader.style.display = 'block';
+
+
+
+        }
+
         function handleSubmit(event) {
+                showSpinner("Downloading log...");
                 //data = [];
 
                 event.preventDefault();
@@ -59,7 +74,7 @@
                 console.log(qString);
 
                 var validate_url = "{{"/validate/{}".format(video_info['id'])}}?" + qString;
-                var chart_url = "{{"/chart-proxy/{}".format(video_info['id'])}}?" + qString;
+                var chart_url = "{{"/chart/{}".format(video_info['id'])}}?" + qString;
 
                 //window.open(link, '_blank')
                 //window.location.href = link
@@ -78,12 +93,13 @@
                         evtSource.close();
 
                         //document.getElementById("submit").disabled = false;
-                        document.getElementById("result").innerHTML="";
+                        //document.getElementById("status").innerHTML="";
 
+                        showSpinner("Loading...");
                         window.location.href = chart_url;
 
                     } else {
-                        document.getElementById("result").innerHTML=event.data;
+                        //document.getElementById("status").innerHTML=event.data;
 
                         if (event.data.includes("Error")) {
                             console.log("killing event source - error");
@@ -97,7 +113,7 @@
                     console.log("JS source call");
 
                 } else {
-                    document.getElementById("result").innerHTML="Sorry, your browser does not support server-sent events...";
+                    //document.getElementById("status").innerHTML="Sorry, your browser does not support server-sent events...";
                 }
         }
 </script>

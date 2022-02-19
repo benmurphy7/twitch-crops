@@ -1,3 +1,4 @@
+import os
 import subprocess
 import time
 import traceback
@@ -20,11 +21,26 @@ from flask import Flask, render_template, request, render_template_string, url_f
 import ssl
 
 from data import collect, logs, analyze, images
-from common import util
+from common import util, config
 
 # Flask constructor takes the name of
 # current module (__name__) as argument.
 app = Flask(__name__)
+#Talisman(app)
+
+
+def initialize():
+    print("Initializing client...")
+    collect.client = collect.initialize_client()
+
+    print("Creating required directories...")
+    check_for_dirs = [config.images_dir, config.download_dir]
+    for dir in check_for_dirs:
+        if not os.path.exists(dir):
+            os.makedirs(dir)
+
+
+initialize()
 
 
 # The route() function of the Flask class is a decorator,
@@ -127,18 +143,23 @@ def validate(video_id):
         yield "data: %s\n\n" % "_EOS_"
 
     def download_status():
-        print('opening process')
-        proc = subprocess.Popen(['node', 'download.js', video_id],
-                                shell=False,
-                                stdout=subprocess.PIPE
-                                )
-        while proc.poll() is None:
-            stdout_line = proc.stdout.readline().decode('UTF-8')
-            if stdout_line:
-                print(proc.stdout.readline())
-                yield "data: %s\n\n" % stdout_line
+        print('opening process - 10.44')
+        try:
+            proc = subprocess.Popen(['node', 'download.js', video_id],
+                                    shell=False,
+                                    stdout=subprocess.PIPE
+                                    )
+            while proc.poll() is None:
+                stdout_line = proc.stdout.readline().decode('UTF-8')
+                if stdout_line:
+                    print(stdout_line)
+                    yield "data: %s\n\n" % stdout_line
+
+        except Exception as e:
+            print(e)
 
     def message_stream(message):
+        print(message)
         yield "data: %s\n\n" % message
         return
 
@@ -177,6 +198,7 @@ def validate(video_id):
     return render_template('video_analysis.html', video_info=video_info, filters=filters, filter_msg=msg)
     """
 
+
 # Request point to open chart in new tab (handling this in javascript is detected as a popup and gets blocked)
 @app.route('/chart-proxy/<video_id>', methods=('GET', 'POST'))
 def chart_proxy(video_id):
@@ -198,9 +220,10 @@ def chart_proxy(video_id):
 
     filters = request.args.get('filters', default='', type=None)
 
-    #webbrowser.open_new_tab(url_for('chart', video_id=video_id, video_info=video_info, filters=filters, _external=True))
+    # webbrowser.open_new_tab(url_for('chart', video_id=video_id, video_info=video_info, filters=filters, _external=True))
     return redirect(url_for('chart', video_id=video_id, video_info=video_info, filters=filters))
-    #return render_template('video_analysis.html', video_info=video_info, filters=filters)
+    # return render_template('video_analysis.html', video_info=video_info, filters=filters)
+
 
 @app.route('/chart/<video_id>', methods=('GET', 'POST'))
 def chart(video_id):
@@ -209,9 +232,20 @@ def chart(video_id):
         print('Inavlid Video ID')
         return
 
-    video_info = request.args.get('video_info', default='', type=None)
-    print('passed video_info')
-    print(video_info)
+    #video_info = request.args.get('video_info', default='', type=None)
+    #print('passed video_info')
+    #print(video_info)
+
+    # Converts ISO date to human-readable string
+    video_date = datetime.fromisoformat(str(video.created_at).replace('Z', '+00:00')).strftime('%B %d, %Y')
+
+    video_info = {
+        'id': video_id,
+        'title': video.title,
+        'user_name': video.user_name,
+        'date': video_date,
+        'duration': util.space_timestamp(video.duration)
+    }
 
     # Filters should already be validated from /validate route
     filters = request.args.get('filters', default='', type=None)
@@ -303,13 +337,14 @@ def render_chart(video: twitch.Helix.video, filter_list=[]):
 
 
 if __name__ == '__main__':
-    collect.client = collect.initialize_client()
     # run() method of Flask class runs the application
     # on the local development server.
 
-    #context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
-    #context.verify_mode = ssl.CERT_REQUIRED
+    # context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+    # context.verify_mode = ssl.CERT_REQUIRED
     # context.load_verify_locations("ca.crt")
 
-    context = ('twitchcrops_tv.crt', 'twitchcrops_tv.key')  # certificate and key files
-    app.run(host='0.0.0.0', port=443, ssl_context=context)
+    # context = ('twitchcrops_tv.crt', 'twitchcrops_tv.key')  # certificate and key files
+    # app.run(host='0.0.0.0', port=443, ssl_context=context)
+    print("Running app...")
+    app.run()

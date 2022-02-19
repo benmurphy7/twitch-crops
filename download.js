@@ -6,6 +6,11 @@ const clientInfo = fs.readFileSync('clientInfo.txt', 'utf8').split('\n');
 
 const logs_path = 'app/resources/downloads/';
 
+if (!fs.existsSync(logs_path)){
+    console.log("Creating log directory");
+    fs.mkdirSync(logs_path, { recursive: true });
+}
+
 var token;
 
 commentMap = {}
@@ -67,7 +72,6 @@ async function multiThreadDownload(threads) {
     clearInterval(progressUpdate);
     showProgress();
     console.log("Download Complete!")
-    console.log("_EOS_")
     //console.log(`total comments: ${total_comments}`)
     //console.log(cursorQueue);
 
@@ -105,6 +109,7 @@ async function multiThreadDownload(threads) {
         fs.rmSync(video_id, { recursive: true, force: true });
     }
 
+    console.log("_EOS_")
     //console.log("DONE!");
 }
 

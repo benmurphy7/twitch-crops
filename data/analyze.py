@@ -15,7 +15,6 @@ from mpld3.plugins import PluginBase
 from mpld3.utils import get_id
 from scipy.signal import find_peaks
 
-from app import display
 from common import util
 
 clip_margin = 0

@@ -1,8 +1,8 @@
-/clientInfo.txt
-
 .gcloudignore
+.git*
 TC Features.txt
 ThinFilters.ui
+TwitchCrops.py
 TwitchCrops - (Backup Copy).spec
 app/resources/
 build/
@@ -11,7 +11,9 @@ dist/
 index.html
 key.pem
 node_modules/
+old-code/
 old-key/
+package-lock.json
 twitchcrops_csr.txt
 twitchcrops_tv.ca-bundle
 twitchcrops_tv.crt
@@ -19,7 +21,4 @@ twitchcrops_tv.key
 twitchcrops_tv.p7b
 twitchcrops_tv.zip
 venv/
-webapp(old)/
-
-*__pycache__*
-*.idea/
+webapp*

@@ -1,0 +1,24 @@
+{
+  "name": "twitch-crops",
+  "version": "1.0.0",
+  "description": "Analyzing emote usage in Twitch stream recordings.",
+  "main": "download.js",
+  "dependencies": {
+    "xhr2": "^0.2.1"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": ""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/benmurphy7/twitch-crops.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/benmurphy7/twitch-crops/issues"
+  },
+  "homepage": "https://github.com/benmurphy7/twitch-crops#readme"
+}

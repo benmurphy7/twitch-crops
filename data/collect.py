@@ -10,10 +10,14 @@ import twitch
 #TODO: Store data in object
 client: twitch.Helix = None
 
+
 def get_client_info(file):
-    with open(file) as f:
-        lines = f.readlines()
-        return lines[0].strip(), lines[1].strip()
+    try:
+        with open(file) as f:
+            lines = f.readlines()
+            return lines[0].strip(), lines[1].strip()
+    except Exception as e:
+        print(e)
 
 
 def add_emote(chat_emotes, key, url):
@@ -56,6 +60,8 @@ def add_ttv_emote(chat_emotes, emote):
 
 def initialize_client():
     client_id, client_secret = get_client_info(config.client_info)
+    print("Client ID: {}".format(client_id))
+    print("Client Secret: {}".format(client_secret))
     return twitch.Helix(client_id=client_id, client_secret=client_secret)
 
 def get_video_info(video_id):

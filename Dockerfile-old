@@ -1,0 +1,53 @@
+#FROM launcher.gcr.io/google/nodejs
+# same as
+FROM gcr.io/google-appengine/nodejs
+
+
+RUN apt-get update \
+    && apt-get install software-properties-common curl gnupg -y \
+    && add-apt-repository ppa:deadsnakes/ppa \
+    && curl -sL https://deb.nodesource.com/setup_16.x | bash \
+    && apt-get install nodejs -y
+
+RUN apt update \
+    && apt install python3.8 python3.8-venv python3-pip -y \
+    && pip3 install --upgrade pip
+# RUN unlink /usr/bin/python
+# RUN ln -sv /usr/bin/python3.5 /usr/bin/python
+
+RUN ls -l /usr/bin/python*
+RUN node -v
+
+WORKDIR /app
+# Add the application source code.
+COPY . .
+
+# Create a virtualenv for dependencies. This isolates these packages from
+# system-level packages.
+# Use -p python3 or -p python3.7 to select python version. Default is version 2.
+#RUN virtualenv -p python3.8 /env
+RUN python3.8 -m venv env
+
+# Setting these environment variables are the same as running
+# source /env/bin/activate. (doesn't work for venv)
+#ENV VIRTUAL_ENV /env
+#ENV PATH /env/bin:$PATH
+
+# Install Python dependencies.
+#RUN pip install -r requirements.txt
+RUN . env/bin/activate \
+    && pip install -r requirements.txt
+
+# Install NodeJS dependencies.
+RUN npm --unsafe-perm install
+
+#RUN node download.js 1237401551
+RUN . env/bin/activate \
+    && python download_test.py
+
+# Run a WSGI server to serve the application. gunicorn must be declared as
+# a dependency in requirements.txt.
+#CMD gunicorn -b :$PORT main:app
+CMD . env/bin/activate \
+    && gunicorn -b :$PORT main:app
+

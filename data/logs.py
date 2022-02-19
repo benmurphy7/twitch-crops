@@ -7,9 +7,8 @@ from os import path
 from pathlib import Path
 
 import twitch
-from PyQt5.QtCore import pyqtSignal
 
-from data import analyze, collect
+from data import analyze
 from common import util, config
 
 
@@ -150,15 +149,12 @@ def format_comment(comment):
     return "[{}] <{}> {}\n".format(timestamp, commenter, message)
 
 
-def download_progress(video_id, comment, end, signal: pyqtSignal = None):
+def download_progress(video_id, comment, end):
     current = float(comment['content_offset_seconds'])
     status = '( Downloading )  [ {} ]  -  {}%\r'.format(video_id, '%.2f' % min(current * 10 / end * 10, 100.00))
 
-    if signal is not None:
-        signal.emit(status)
-    else:
-        sys.stdout.flush()
-        sys.stdout.write(status)
+    sys.stdout.flush()
+    sys.stdout.write(status)
 
 
 def get_comments(video, cursor):
@@ -171,7 +167,7 @@ def get_fragment(comments, cursor):
 
 
 # Download, appending to existing log if exists
-def download_log(video_info, signal: pyqtSignal = None):
+def download_log(video_info):
     video_id = video_info.id
     file = get_log_path(video_id)
     cursor = cursor_update(video_id)
@@ -183,7 +179,7 @@ def download_log(video_info, signal: pyqtSignal = None):
                 chunk = ''
                 fragment = get_fragment(video_info.comments, cursor)
                 comments = fragment['comments']
-                download_progress(video_id, comments[-1], end, signal)
+                download_progress(video_id, comments[-1], end)
                 for comment in comments:
                     chunk += format_comment(comment)
                 if '_next' in fragment:
