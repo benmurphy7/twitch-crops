@@ -264,9 +264,8 @@ async function getAccessToken() {
     url.searchParams.append('client_secret', clientInfo[1]);
     url.searchParams.append('grant_type', 'client_credentials');
 
-    let xhr = new XMLHttpRequest();
-    xhr.open("POST", url.toString());
-    response = await makeRequest(xhr);
+    let xhr = createRequest("POST", url.toString(), false);
+    response = await submitRequest(xhr);
 
     return JSON.parse(response);
 }
@@ -275,13 +274,11 @@ async function getSeconds() {
     var url = new URL(`https://api.twitch.tv/helix/videos`);
     url.searchParams.append('id', video_id);
 
-    let xhr = new XMLHttpRequest();
-    
-    xhr.open("GET", url.toString());
+    let xhr = createRequest("GET", url.toString(), false);
     xhr.setRequestHeader('Client-ID', clientInfo[0]);
     xhr.setRequestHeader('Authorization', 'Bearer ' + token['access_token']);
 
-    response = await makeRequest(xhr);
+    response = await submitRequest(xhr);
     var obj = JSON.parse(response);
     var duration = obj['data'][0]['duration'];
    
@@ -292,31 +289,35 @@ async function getOffsetComments(video_id, offset) {
     var url = new URL(`https://api.twitch.tv/v5/videos/${video_id}/comments`);
     url.searchParams.append('content_offset_seconds', offset);
     
-    let xhr = new XMLHttpRequest();
-    
-    xhr.open("GET", url.toString());
-    xhr.setRequestHeader('Client-ID', clientInfo[0]);
-    xhr.setRequestHeader('Authorization', clientInfo[1]);
-    //xhr.setRequestHeader('Cache-Control', 'no-cache');
-    
-    return JSON.parse(await makeRequest(xhr));
+    let xhr = createRequest("GET", url.toString(), true);
+
+    return JSON.parse(await submitRequest(xhr));
 }
 
 async function getCursorComments(video_id, cursor) {
     var url = new URL(`https://api.twitch.tv/v5/videos/${video_id}/comments`);
     url.searchParams.append('cursor', cursor);
     
-    let xhr = new XMLHttpRequest();
+    let xhr = createRequest("GET", url.toString(), true);
     
-    xhr.open("GET", url.toString());
-    xhr.setRequestHeader('Client-ID', clientInfo[0]);
-    xhr.setRequestHeader('Authorization', clientInfo[1]);
-    //xhr.setRequestHeader('Cache-Control', 'no-cache');
-    
-    return JSON.parse(await makeRequest(xhr));
+    return JSON.parse(await submitRequest(xhr));
 }
 
-function makeRequest(xhr) {
+function createRequest(type, url, default_headers) {
+    let xhr = new XMLHttpRequest();
+
+    xhr.open(type, url);
+
+    if (default_headers) {
+        xhr.setRequestHeader("Accept", "application/vnd.twitchtv.v5+json");
+        xhr.setRequestHeader("Client-ID", "kimne78kx3ncx6brgo4mv6wki5h1ko");
+        //xhr.setRequestHeader('Cache-Control', 'no-cache');
+    }
+
+    return xhr;
+}
+
+function submitRequest(xhr) {
     return new Promise(function (resolve, reject) {
         xhr.onload = function () {
             if (this.status == 200) { //this.status >= 200 && this.status < 300
